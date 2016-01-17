@@ -6,7 +6,7 @@ version := "0.0.1"
 scalaVersion := "2.11.7"
 
 val akkaVersion = "2.4.1"
-val akkaStreamsVersion = "2.0.1"
+val akkaStreamsVersion = "2.0.2"
 
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.1.3",
@@ -17,6 +17,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-core-experimental" % akkaStreamsVersion,
   "com.typesafe.akka" %% "akka-http-experimental" % akkaStreamsVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
+  "com.typesafe.play" %% "play-json" % "2.4.6",  // TODO: choose some lightweight lib
   "org.scalatest" %% "scalatest" % "2.2.6" % "test"
 )
 

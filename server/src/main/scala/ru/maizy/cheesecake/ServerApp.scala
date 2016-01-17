@@ -4,7 +4,7 @@ import scala.io.StdIn
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.Directives.{ path, get, complete }
+import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 
 
@@ -14,14 +14,8 @@ object ServerApp extends App {
   implicit val materializer = ActorMaterializer()
   implicit val ec = system.dispatcher
 
-  val route =
-    path("ping") {
-      get {
-        complete {
-          "pong"
-        }
-      }
-    }
+  val wsApi = new WsApi(system, materializer)
+  val route = JsonApi.routes ~ WebUI.routes ~ wsApi.routes
 
   val bindingFuture = Http().bindAndHandle(route, "localhost", 9876)
 
