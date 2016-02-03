@@ -1,3 +1,8 @@
+/**
+  * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
+  * See LICENSE.txt for details.
+  */
+
 (function(global) {
     HttpUtils = {};
 
