@@ -17,7 +17,6 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-core-experimental" % akkaStreamsVersion,
   "com.typesafe.akka" %% "akka-http-experimental" % akkaStreamsVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
-  "com.typesafe.play" %% "play-json" % "2.4.6",  // TODO: choose some lightweight lib
   "org.scalatest" %% "scalatest" % "2.2.6" % "test"
 )
 
