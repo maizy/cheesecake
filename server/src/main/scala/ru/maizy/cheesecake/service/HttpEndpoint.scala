@@ -5,11 +5,15 @@ package ru.maizy.cheesecake.service
   * See LICENSE.txt for details.
   */
 
-
 import java.net.InetAddress
+import ru.maizy.cheesecake.Headers
 
 sealed trait HttpAddress
 case class IpAddress(ip: InetAddress) extends HttpAddress
 case class SymbolicAddress(host: String) extends HttpAddress
 
-case class HttpEndpoint(address: HttpAddress, port: Int) extends Endpoint
+case class HttpEndpoint(
+  address: HttpAddress,
+  port: Int,
+  headers: Option[Headers] = None
+) extends Endpoint

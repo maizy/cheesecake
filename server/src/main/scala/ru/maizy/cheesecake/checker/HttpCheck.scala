@@ -1,20 +1,24 @@
 package ru.maizy.cheesecake.checker
 
-import ru.maizy.cheesecake.service.Endpoint
+import ru.maizy.cheesecake.{ Headers, Timestamp }
+import ru.maizy.cheesecake.service.{ HttpEndpoint, Endpoint }
 
 /**
   * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
   * See LICENSE.txt for details.
   */
 
-case class HttpCheck(endpoint: Endpoint, includeResponse: Boolean = false)
-  extends AbstractCheck(endpoint)
+case class HttpCheck(
+  endpoint: HttpEndpoint,
+  includeResponse: Boolean = false
+) extends AbstractCheck(endpoint)
 
 case class HttpCheckResult(
-  endpoint: Endpoint,
+  endpoint: HttpEndpoint,
   status: CheckStatus.Type,
+  checkTime: Timestamp,
   httpStatus: Option[Int],
   body: Option[Seq[Byte]],
-  header: Option[Map[String, IndexedSeq[String]]]
+  headers: Option[Headers]
 ) extends CheckResult
 

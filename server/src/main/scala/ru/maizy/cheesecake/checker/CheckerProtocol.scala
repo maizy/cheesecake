@@ -5,6 +5,7 @@ package ru.maizy.cheesecake.checker
   * See LICENSE.txt for details.
   */
 
+import ru.maizy.cheesecake.Timestamp
 import ru.maizy.cheesecake.service.Endpoint
 
 object CheckStatus extends Enumeration {
@@ -18,6 +19,7 @@ abstract class AbstractCheck(endpoint: Endpoint) extends CheckerProtocol
 case class Check(endpoint: Endpoint) extends AbstractCheck(endpoint)
 
 trait CheckResult extends CheckerProtocol {
-  val endpoint: Endpoint
-  val status: CheckStatus.Type
+  def endpoint: Endpoint
+  def status: CheckStatus.Type
+  def checkTime: Timestamp
 }
