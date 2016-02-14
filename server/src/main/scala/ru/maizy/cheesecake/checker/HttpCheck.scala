@@ -1,7 +1,7 @@
 package ru.maizy.cheesecake.checker
 
 import ru.maizy.cheesecake.{ Headers, Timestamp }
-import ru.maizy.cheesecake.service.{ HttpEndpoint, Endpoint }
+import ru.maizy.cheesecake.service.HttpEndpoint
 
 /**
   * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
@@ -17,8 +17,8 @@ case class HttpCheckResult(
   endpoint: HttpEndpoint,
   status: CheckStatus.Type,
   checkTime: Timestamp,
-  httpStatus: Option[Int],
-  body: Option[Seq[Byte]],
-  headers: Option[Headers]
+  httpStatus: Option[Int] = None,
+  body: Option[Seq[Byte]] = None,
+  headers: Option[Headers] = None
 ) extends CheckResult
 

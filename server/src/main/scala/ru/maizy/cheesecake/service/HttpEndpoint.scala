@@ -15,5 +15,6 @@ case class SymbolicAddress(host: String) extends HttpAddress
 case class HttpEndpoint(
   address: HttpAddress,
   port: Int,
+  path: String = "/",
   headers: Option[Headers] = None
 ) extends Endpoint

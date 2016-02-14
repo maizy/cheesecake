@@ -5,10 +5,12 @@ package ru.maizy.cheesecake
   * See LICENSE.txt for details.
   */
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 
-object WebUI {
+
+class WebUI(system: ActorSystem) {
 
   val routes: Route =
     pathSingleSlash {

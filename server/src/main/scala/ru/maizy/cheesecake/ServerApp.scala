@@ -5,12 +5,17 @@ package ru.maizy.cheesecake
   * See LICENSE.txt for details.
   */
 
+import scala.concurrent.Future
 import scala.io.StdIn
-
-import akka.actor.ActorSystem
+import scala.concurrent.duration._
+import scala.util.{ Failure, Success }
+import akka.actor.{ Props, ActorSystem }
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
+import akka.util.Timeout
+import ru.maizy.cheesecake.checker.{ HttpCheckResult, HttpCheck, HttpCheckerActor }
+import ru.maizy.cheesecake.service.{ Service, SymbolicAddress, HttpEndpoint }
 
 
 object ServerApp extends App {
@@ -19,14 +24,56 @@ object ServerApp extends App {
   implicit val materializer = ActorMaterializer()
   implicit val ec = system.dispatcher
 
+  // TODO: args parsing
+  val (host, port) = args.toList match {
+    case p :: Nil => ("localhost", p.toInt)
+    case h :: p :: Nil => (h, p.toInt)
+    case _ => ("localhost", 52022)
+  }
+
   val wsApi = new WsApi(system, materializer)
-  val route = JsonApi.routes ~ WebUI.routes ~ wsApi.routes
+  val jsonApi = new JsonApi(system, host, port)
+  val webUi = new WebUI(system)
 
-  val bindingFuture = Http().bindAndHandle(route, "localhost", 9876)
+  val route = jsonApi.routes ~ webUi.routes ~ wsApi.routes
 
-  println(s"Server online at http://localhost:9876/\nPress RETURN to stop...")
+  val bindingFuture = Http().bindAndHandle(route, host, port)
+
+  hardcodedApp()
+
+  // TODO: app life management
+  println(s"Server online at http://$host:$port/\nPress RETURN to stop...")
   StdIn.readLine()
   bindingFuture
     .flatMap(_.unbind())
-    .onComplete(_ ⇒ system.terminate())
+    .onComplete(_ => system.terminate())
+
+  def hardcodedApp(): Unit = {
+    import akka.pattern.ask
+    implicit val timeout = Timeout(30.seconds)
+
+    val endpoint1 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/status")
+    val endpoint2 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/")
+    val endpoint3 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/not_found")
+
+    val service1 = Service("nginx", Set(endpoint1, endpoint2, endpoint3))
+
+    val httpChecker = system.actorOf(Props[HttpCheckerActor], name = "http-checker")
+    val httpEndpoints = service1.endpoints.collect { case e: HttpEndpoint => e }.toSeq
+
+    val futures = httpEndpoints.map { endpoint =>
+      (httpChecker ? HttpCheck(endpoint)).mapTo[HttpCheckResult]
+    }
+
+    Future.sequence(futures).onComplete {
+      case Success(results) =>
+        println(
+          results
+          .map(r => s"${r.endpoint}: Status: ${r.status} HTTP: ${r.httpStatus}}")
+          .mkString("\n")
+        )
+
+      case Failure(e) => println(s"Error: $e")
+    }
+  }
 }

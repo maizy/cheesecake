@@ -5,19 +5,20 @@ package ru.maizy.cheesecake
   * See LICENSE.txt for details.
   */
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 
 case class AppConfig(wsStateUrl: String)
 
 
-object JsonApi {
+class JsonApi(system: ActorSystem, host: String, port: Int) {
 
   val routes: Route =
     path("configs") {
       get {
         complete {
-          """{"wsStateUrl": "ws://localhost:9876/ws/state"}"""  // FIXME: make a real json
+          s"""{"wsStateUrl": "ws://$host:$port/ws/state"}"""  // FIXME: make a real json
         }
       }
     }
