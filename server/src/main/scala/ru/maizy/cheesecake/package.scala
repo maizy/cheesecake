@@ -6,6 +6,6 @@ package ru.maizy
   */
 package object cheesecake {
 
-  type Headers = Map[String, IndexedSeq[String]]
+  type Headers = Map[String, Seq[String]]
 
 }

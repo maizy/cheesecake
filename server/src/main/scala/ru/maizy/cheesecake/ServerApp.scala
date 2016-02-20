@@ -55,24 +55,26 @@ object ServerApp extends App {
     val endpoint1 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/status")
     val endpoint2 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/")
     val endpoint3 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/not_found")
+    val endpoint4 = HttpEndpoint(SymbolicAddress("non.exists"), 80, "/")
 
-    val service1 = Service("nginx", Set(endpoint1, endpoint2, endpoint3))
+    val service1 = Service("nginx", Set(endpoint1, endpoint2, endpoint3, endpoint4))
 
-    val httpChecker = system.actorOf(Props[HttpCheckerActor], name = "http-checker")
+    val httpChecker = system.actorOf(Props(new HttpCheckerActor(materializer)), name = "http-checker")
     val httpEndpoints = service1.endpoints.collect { case e: HttpEndpoint => e }.toSeq
 
     val futures = httpEndpoints.map { endpoint =>
       (httpChecker ? HttpCheck(endpoint)).mapTo[HttpCheckResult]
+    } ++ httpEndpoints.map { endpoint =>
+      (httpChecker ? HttpCheck(endpoint, includeResponse = true)).mapTo[HttpCheckResult]
     }
 
     Future.sequence(futures).onComplete {
       case Success(results) =>
         println(
           results
-          .map(r => s"${r.endpoint}: Status: ${r.status} HTTP: ${r.httpStatus}}")
+          .map(r => s"${r.endpoint}: Status: ${r.status} HTTP: ${r.httpStatus}} Header: ${r.headers} Body: ${r.body}")
           .mkString("\n")
         )
-
       case Failure(e) => println(s"Error: $e")
     }
   }
