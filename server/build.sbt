@@ -5,16 +5,16 @@ organization := "ru.maizy"
 version := "0.0.1"
 scalaVersion := "2.11.7"
 
-val akkaVersion = "2.4.1"
-val akkaStreamsVersion = "2.0.2"
+val akkaVersion = "2.4.2"
+val akkaStreamsVersion = akkaVersion
 
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.1.3",
   "com.github.scopt" %% "scopt" % "3.3.0",
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
-  "com.typesafe.akka" %% "akka-stream-experimental" % akkaStreamsVersion,
-  "com.typesafe.akka" %% "akka-http-core-experimental" % akkaStreamsVersion,
+  "com.typesafe.akka" %% "akka-stream" % akkaStreamsVersion,
+  "com.typesafe.akka" %% "akka-http-core" % akkaStreamsVersion,
   "com.typesafe.akka" %% "akka-http-experimental" % akkaStreamsVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
   "org.scalatest" %% "scalatest" % "2.2.6" % "test"

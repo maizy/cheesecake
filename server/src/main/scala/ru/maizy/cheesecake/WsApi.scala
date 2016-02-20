@@ -6,6 +6,7 @@ package ru.maizy.cheesecake
   */
 
 import scala.concurrent.ExecutionContextExecutor
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -20,11 +21,11 @@ class WsApi(system: ActorSystem, materializer: ActorMaterializer) {
   val routes: Route = pathPrefix("ws") {
     pathPrefix("state") {
       get {
-        handleWebsocketMessages(stubFlow())
+        handleWebSocketMessages(stubFlow())
       }
     }
   }
 
-  def stubFlow(): Flow[Message, Message, Unit] = Flow[Message]  // TODO
+  def stubFlow(): Flow[Message, Message, NotUsed] = Flow[Message]  // TODO
 
 }

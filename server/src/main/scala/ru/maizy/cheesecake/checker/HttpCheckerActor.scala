@@ -7,7 +7,7 @@ package ru.maizy.cheesecake.checker
 
 import scala.concurrent.Future
 import akka.actor.{ ActorRef, ActorLogging, Actor }
-import akka.http.ClientConnectionSettings
+import akka.http.scaladsl.settings.ClientConnectionSettings
 import akka.http.scaladsl.model.{ HttpResponse, HttpRequest, StatusCodes }
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
@@ -29,9 +29,9 @@ class HttpCheckerActor(val m: ActorMaterializer) extends Actor with ActorLogging
 
   val defaultConfigOverrides: Config = ConfigFactory.parseString(
     s"""
-      |user-agent-header = cheesecake/${Version.literal}
-      |connecting-timeout = 1s
-      |idle-timeout = 15s
+      |akka.http.client.user-agent-header = cheesecake/${Version.literal}
+      |akka.http.client.connecting-timeout = 1s
+      |akka.http.client.idle-timeout = 15s
     """.stripMargin)
 
   override def receive: Receive = {
@@ -88,7 +88,7 @@ class HttpCheckerActor(val m: ActorMaterializer) extends Actor with ActorLogging
 
   def buildConnectionSettings(endpoint: HttpEndpoint): ClientConnectionSettings = {
     // TODO: configurable for each endpoint
-    ClientConnectionSettings.fromSubConfig(config, defaultConfigOverrides)
+    ClientConnectionSettings(defaultConfigOverrides.withFallback(config))
   }
 
   def buildFlow(endpoint: HttpEndpoint): Flow[HttpRequest, HttpResponse, Future[Http.OutgoingConnection]] = {
