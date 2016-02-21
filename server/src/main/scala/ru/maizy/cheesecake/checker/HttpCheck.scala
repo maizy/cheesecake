@@ -1,5 +1,6 @@
 package ru.maizy.cheesecake.checker
 
+import akka.util.ByteString
 import ru.maizy.cheesecake.{ Headers, Timestamp }
 import ru.maizy.cheesecake.service.HttpEndpoint
 
@@ -18,7 +19,7 @@ case class HttpCheckResult(
   status: CheckStatus.Type,
   checkTime: Timestamp,
   httpStatus: Option[Int] = None,
-  body: Option[Seq[Byte]] = None,
+  body: Option[ByteString] = None,
   headers: Option[Headers] = None
 ) extends CheckResult
 

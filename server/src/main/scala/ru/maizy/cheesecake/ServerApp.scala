@@ -14,13 +14,22 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
+import com.typesafe.config.ConfigFactory
 import ru.maizy.cheesecake.checker.{ HttpCheckResult, HttpCheck, HttpCheckerActor }
 import ru.maizy.cheesecake.service.{ Service, SymbolicAddress, HttpEndpoint }
 
 
 object ServerApp extends App {
 
-  implicit val system = ActorSystem("cheesecake-server")
+  val loadedConfig = ConfigFactory.load()
+  val config = ConfigFactory
+    .parseString(
+      s"""
+        |akka.http.client.user-agent-header = cheesecake/${Version.literal}
+      """.stripMargin
+    ) withFallback loadedConfig
+
+  implicit val system = ActorSystem("cheesecake-server", config)
   implicit val materializer = ActorMaterializer()
   implicit val ec = system.dispatcher
 
@@ -72,7 +81,10 @@ object ServerApp extends App {
       case Success(results) =>
         println(
           results
-          .map(r => s"${r.endpoint}: Status: ${r.status} HTTP: ${r.httpStatus}} Header: ${r.headers} Body: ${r.body}")
+          .map(r => s"${r.endpoint}\n" +
+            s"Status: ${r.status} HTTP: ${r.httpStatus}}\n" +
+            s"Headers: ${r.headers.getOrElse("<not parsed>")}\n" +
+            s"Body: \n${r.body.map(" |" + _.utf8String.replace("\n", "\n |")).getOrElse("<not parsed>")}\n")
           .mkString("\n")
         )
       case Failure(e) => println(s"Error: $e")
