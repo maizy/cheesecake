@@ -1,11 +1,9 @@
 package ru.maizy.cheesecake
 
-import java.util.Calendar
-
 /**
-  * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
-  * See LICENSE.txt for details.
-  */
+ * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
+ * See LICENSE.txt for details.
+ */
 
 case class Timestamp(millis: Long) {
   require(millis > 0)

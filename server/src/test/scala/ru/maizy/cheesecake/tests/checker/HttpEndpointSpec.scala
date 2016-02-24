@@ -1,9 +1,9 @@
 package ru.maizy.cheesecake.tests.checker
 
 /**
-  * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
-  * See LICENSE.txt for details.
-  */
+ * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
+ * See LICENSE.txt for details.
+ */
 
 import java.net.InetAddress
 import org.scalatest.FlatSpecLike

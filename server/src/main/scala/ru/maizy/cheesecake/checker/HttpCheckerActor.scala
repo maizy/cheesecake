@@ -1,9 +1,9 @@
 package ru.maizy.cheesecake.checker
 
 /**
-  * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
-  * See LICENSE.txt for details.
-  */
+ * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
+ * See LICENSE.txt for details.
+ */
 
 import scala.concurrent.duration._
 import scala.concurrent.Future
@@ -23,7 +23,7 @@ import ru.maizy.cheesecake.service.HttpEndpoint
 class HttpCheckerActor(val m: ActorMaterializer) extends Actor with ActorLogging {
 
   implicit val materializer = m  // TODO: is there any better solution?
-  implicit val system = context.system  // TODO: separate dispatcher
+  implicit val system = context.system
   implicit val ec = system.dispatcher  // TODO: separate dispatcher
 
   val connectTimeout = 1.seconds
@@ -75,8 +75,10 @@ class HttpCheckerActor(val m: ActorMaterializer) extends Actor with ActorLogging
     )
   }
 
-  def checkResponse(response: HttpResponse, includeResponse: Boolean, endpoint: HttpEndpoint)
-      : Future[HttpCheckResult] = {
+  def checkResponse(
+      response: HttpResponse,
+      includeResponse: Boolean,
+      endpoint: HttpEndpoint): Future[HttpCheckResult] = {
     val time = Timestamp.now()
     val checkStatus = response.status match {
       case StatusCodes.OK => CheckStatus.Ok
@@ -85,9 +87,9 @@ class HttpCheckerActor(val m: ActorMaterializer) extends Actor with ActorLogging
     val headers: Option[Headers] = includeResponse match {
       case true =>
         Some(
-            CollectionsUtils.tuplesToMultiMap(
-              response.headers.map { h => (h.name, h.value) }
-            )
+          CollectionsUtils.tuplesToMultiMap(
+            response.headers.map { h => (h.name, h.value) }
+          )
         )
       case _ => None
     }

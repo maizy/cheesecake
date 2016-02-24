@@ -1,9 +1,9 @@
 package ru.maizy.cheesecake.checker
 
 /**
-  * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
-  * See LICENSE.txt for details.
-  */
+ * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
+ * See LICENSE.txt for details.
+ */
 
 import ru.maizy.cheesecake.Timestamp
 import ru.maizy.cheesecake.service.Endpoint

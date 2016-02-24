@@ -1,9 +1,9 @@
 package ru.maizy.cheesecake
 
 /**
-  * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
-  * See LICENSE.txt for details.
-  */
+ * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
+ * See LICENSE.txt for details.
+ */
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Directives._

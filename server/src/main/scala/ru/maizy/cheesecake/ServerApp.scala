@@ -1,21 +1,20 @@
 package ru.maizy.cheesecake
 
 /**
-  * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
-  * See LICENSE.txt for details.
-  */
+ * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
+ * See LICENSE.txt for details.
+ */
 
-import scala.concurrent.Future
 import scala.io.StdIn
 import scala.concurrent.duration._
-import scala.util.{ Failure, Success }
 import akka.actor.{ Props, ActorSystem }
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
-import ru.maizy.cheesecake.checker.{ HttpCheckResult, HttpCheck, HttpCheckerActor }
+import ru.maizy.cheesecake.checker.HttpCheckerActor
+import ru.maizy.cheesecake.endpointmanager.{ SetCheckInterval, HttpEndpointManagerActor }
 import ru.maizy.cheesecake.service.{ Service, SymbolicAddress, HttpEndpoint }
 
 
@@ -58,7 +57,6 @@ object ServerApp extends App {
     .onComplete(_ => system.terminate())
 
   def hardcodedApp(): Unit = {
-    import akka.pattern.ask
     implicit val timeout = Timeout(30.seconds)
 
     val endpoint1 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/status")
@@ -68,26 +66,16 @@ object ServerApp extends App {
 
     val service1 = Service("nginx", Set(endpoint1, endpoint2, endpoint3, endpoint4))
 
-    val httpChecker = system.actorOf(Props(new HttpCheckerActor(materializer)), name = "http-checker")
+    val httpChecker = system.actorOf(Props(new HttpCheckerActor(materializer)), name = "http-checker-1")
     val httpEndpoints = service1.endpoints.collect { case e: HttpEndpoint => e }.toSeq
 
-    val futures = httpEndpoints.map { endpoint =>
-      (httpChecker ? HttpCheck(endpoint)).mapTo[HttpCheckResult]
-    } ++ httpEndpoints.map { endpoint =>
-      (httpChecker ? HttpCheck(endpoint, includeResponse = true)).mapTo[HttpCheckResult]
-    }
-
-    Future.sequence(futures).onComplete {
-      case Success(results) =>
-        println(
-          results
-          .map(r => s"${r.endpoint}\n" +
-            s"Status: ${r.status} HTTP: ${r.httpStatus}}\n" +
-            s"Headers: ${r.headers.getOrElse("<not parsed>")}\n" +
-            s"Body: \n${r.body.map(" |" + _.utf8String.replace("\n", "\n |")).getOrElse("<not parsed>")}\n")
-          .mkString("\n")
-        )
-      case Failure(e) => println(s"Error: $e")
+    val number = Stream.iterate(0)(_ + 1).iterator
+    for (httpEndpoint <- httpEndpoints) {
+      val endpointManager = system.actorOf(
+        Props(new HttpEndpointManagerActor(httpChecker, httpEndpoint)),
+        name = s"endpoint-manager-${number.next}"
+      )
+      endpointManager ! SetCheckInterval(5.seconds)
     }
   }
 }
