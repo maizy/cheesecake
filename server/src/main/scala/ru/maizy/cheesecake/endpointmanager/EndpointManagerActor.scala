@@ -7,6 +7,7 @@ package ru.maizy.cheesecake.endpointmanager
 
 import scala.concurrent.duration.FiniteDuration
 import akka.actor.{ Actor, Cancellable, ActorLogging }
+import ru.maizy.cheesecake.random
 
 abstract class EndpointManagerActor extends Actor with ActorLogging {
 
@@ -22,8 +23,11 @@ abstract class EndpointManagerActor extends Actor with ActorLogging {
 
     case SetCheckInterval(interval: FiniteDuration) =>
       disableChecking()
+
+      // FiniteDuration.mul returns Duration because of Double.*Infinity
+      val initialInterval: FiniteDuration = (interval * random.nextDouble()).asInstanceOf[FiniteDuration]
       _checkInterval = Some(interval)
-      checkTicker = Some(context.system.scheduler.schedule(interval, interval, self, Check))
+      checkTicker = Some(context.system.scheduler.schedule(initialInterval, interval, self, Check))
 
     case DisableChecking =>
       disableChecking()
