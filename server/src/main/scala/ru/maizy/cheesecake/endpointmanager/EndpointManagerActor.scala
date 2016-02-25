@@ -22,7 +22,7 @@ abstract class EndpointManagerActor extends Actor with ActorLogging {
   protected def checkTickerHandler: Receive = {
 
     case SetCheckInterval(interval: FiniteDuration) =>
-      disableChecking()
+      cancelTicker()
 
       // FiniteDuration.mul returns Duration because of Double.*Infinity
       val initialInterval: FiniteDuration = (interval * random.nextDouble()).asInstanceOf[FiniteDuration]
@@ -30,14 +30,18 @@ abstract class EndpointManagerActor extends Actor with ActorLogging {
       checkTicker = Some(context.system.scheduler.schedule(initialInterval, interval, self, Check))
 
     case DisableChecking =>
-      disableChecking()
+      cancelTicker()
 
     case Check => check()
   }
 
-  protected def disableChecking(): Unit = {
+  protected def cancelTicker(): Unit = {
     checkTicker.foreach(_.cancel())
     checkTicker = None
+  }
+
+  override def postStop(): Unit = {
+    cancelTicker()
   }
 
   protected def checkInterval: Option[FiniteDuration] = _checkInterval

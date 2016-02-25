@@ -5,4 +5,4 @@ package ru.maizy.cheesecake.service
  * See LICENSE.txt for details.
  */
 
-case class Service(name: String, endpoints: Set[Endpoint])
+case class Service(name: String)

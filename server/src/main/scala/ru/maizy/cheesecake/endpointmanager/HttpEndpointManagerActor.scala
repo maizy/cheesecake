@@ -7,19 +7,19 @@ package ru.maizy.cheesecake.endpointmanager
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import akka.actor.ActorRef
+import akka.actor.{ Props, ActorRef }
 import akka.event.LoggingReceive
 import akka.pattern.{ ask, pipe }
 import ru.maizy.cheesecake.checker.{ HttpCheckResult, HttpCheck }
 import ru.maizy.cheesecake.service.HttpEndpoint
 
 
-class HttpEndpointManagerActor(checkerPool: ActorRef, endpoint: HttpEndpoint) extends EndpointManagerActor {
+class HttpEndpointManagerActor(httpCheckerPool: ActorRef, endpoint: HttpEndpoint) extends EndpointManagerActor {
 
   override protected def check(): Unit = {
     val timeout = checkInterval.getOrElse(1.seconds)
     val checkFuture: Future[HttpCheckResult] =
-      (checkerPool ? HttpCheck(endpoint, includeResponse = true))(timeout).mapTo[HttpCheckResult]
+      (httpCheckerPool ? HttpCheck(endpoint, includeResponse = true))(timeout).mapTo[HttpCheckResult]
     checkFuture pipeTo self
   }
 
@@ -29,4 +29,10 @@ class HttpEndpointManagerActor(checkerPool: ActorRef, endpoint: HttpEndpoint) ex
 
   override def receive: Receive = LoggingReceive(checkResultsHandler orElse super.receive)
 
+}
+
+
+object HttpEndpointManagerActor {
+  def props(httpCheckerPool: ActorRef, endpoint: HttpEndpoint): Props =
+    Props(new HttpEndpointManagerActor(httpCheckerPool, endpoint))
 }

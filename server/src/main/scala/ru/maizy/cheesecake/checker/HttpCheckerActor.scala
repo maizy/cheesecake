@@ -7,7 +7,7 @@ package ru.maizy.cheesecake.checker
 
 import scala.concurrent.duration._
 import scala.concurrent.Future
-import akka.actor.{ ActorRef, ActorLogging, Actor }
+import akka.actor.{ Props, ActorRef, ActorLogging, Actor }
 import akka.http.scaladsl.settings.ClientConnectionSettings
 import akka.http.scaladsl.model.{ HttpResponse, HttpRequest, StatusCodes }
 import akka.http.scaladsl.Http
@@ -20,11 +20,11 @@ import ru.maizy.cheesecake.{ Headers, Timestamp }
 import ru.maizy.cheesecake.service.HttpEndpoint
 
 
-class HttpCheckerActor(val m: ActorMaterializer) extends Actor with ActorLogging {
+class HttpCheckerActor(val materializer: ActorMaterializer) extends Actor with ActorLogging {
 
-  implicit val materializer = m  // TODO: is there any better solution?
   implicit val system = context.system
   implicit val ec = system.dispatcher  // TODO: separate dispatcher
+  implicit val mat = materializer
 
   val connectTimeout = 1.seconds
   val readTimeout = 2.seconds
@@ -115,4 +115,9 @@ class HttpCheckerActor(val m: ActorMaterializer) extends Actor with ActorLogging
     }
   }
 
+}
+
+
+object HttpCheckerActor {
+  def props(mat: ActorMaterializer): Props = Props(new HttpCheckerActor(mat))
 }
