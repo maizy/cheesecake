@@ -7,8 +7,8 @@ package ru.maizy.cheesecake.endpointmanager
 
 import scala.concurrent.duration.FiniteDuration
 
-trait EndpointManagerProtocol
+sealed trait EndpointManagerProtocol
 
-case class SetCheckInterval(interval: FiniteDuration)
-case object DisableChecking
-case object Check
+case class SetCheckInterval(interval: FiniteDuration) extends EndpointManagerProtocol
+case object DisableChecking extends EndpointManagerProtocol
+case object Check extends EndpointManagerProtocol

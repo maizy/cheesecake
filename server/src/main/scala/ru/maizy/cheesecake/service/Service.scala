@@ -6,3 +6,7 @@ package ru.maizy.cheesecake.service
  */
 
 case class Service(name: String)
+
+case class EndpointFQN(service: Service, endpoint: Endpoint) {
+  override def toString: String = s"Service(${service.name})/Endpoint($endpoint)"
+}

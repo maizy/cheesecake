@@ -5,7 +5,6 @@ package ru.maizy.cheesecake.service
  * See LICENSE.txt for details.
  */
 
-import java.net.URLEncoder
 import scala.concurrent.duration._
 import scala.collection.mutable
 import akka.actor.{ Props, ActorRef, ActorLogging, Actor }

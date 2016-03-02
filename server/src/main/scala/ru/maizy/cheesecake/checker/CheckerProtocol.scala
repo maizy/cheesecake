@@ -13,12 +13,12 @@ object CheckStatus extends Enumeration {
   val Ok, UnableToCheck, Unavailable = Value
 }
 
-trait CheckerProtocol
+sealed trait CheckerProtocol
 
 abstract class AbstractCheck(endpoint: Endpoint) extends CheckerProtocol
 case class Check(endpoint: Endpoint) extends AbstractCheck(endpoint)
 
-trait CheckResult extends CheckerProtocol {
+trait CheckResult {
   def endpoint: Endpoint
   def status: CheckStatus.Type
   def checkTime: Timestamp
