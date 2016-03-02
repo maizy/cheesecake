@@ -1,7 +1,8 @@
 package ru.maizy.cheesecake.checker
 
+import java.time.ZonedDateTime
 import akka.util.ByteString
-import ru.maizy.cheesecake.{ Headers, Timestamp }
+import ru.maizy.cheesecake.Headers
 import ru.maizy.cheesecake.service.HttpEndpoint
 
 /**
@@ -17,7 +18,7 @@ case class HttpCheck(
 case class HttpCheckResult(
     endpoint: HttpEndpoint,
     status: CheckStatus.Type,
-    checkTime: Timestamp,
+    checkTime: ZonedDateTime,
     httpStatus: Option[Int] = None,
     body: Option[ByteString] = None,
     headers: Option[Headers] = None

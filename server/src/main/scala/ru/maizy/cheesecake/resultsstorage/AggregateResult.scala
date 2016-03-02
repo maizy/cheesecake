@@ -5,8 +5,7 @@ package ru.maizy.cheesecake.resultsstorage
  * See LICENSE.txt for details.
  */
 
-import java.time.Duration
-import ru.maizy.cheesecake.Timestamp
+import java.time.{ ZonedDateTime, Duration }
 
 
 sealed trait AggregateResult[+T] {
@@ -21,8 +20,8 @@ case class IntResult(aggregate: Aggregate, result: Int) extends AggregateResult[
 case class OptionalIntResult(aggregate: Aggregate, result: Option[Int])
   extends OptionalAggregateResult[Int]
 
-case class OptionalTimestampResult(aggregate: Aggregate, result: Option[Timestamp])
-  extends OptionalAggregateResult[Timestamp]
+case class OptionalDateTimeResult(aggregate: Aggregate, result: Option[ZonedDateTime])
+  extends OptionalAggregateResult[ZonedDateTime]
 
 case class DurationResult(aggregate: Aggregate, result: Duration)
   extends AggregateResult[Duration]

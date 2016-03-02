@@ -5,6 +5,7 @@ package ru.maizy.cheesecake.checker
  * See LICENSE.txt for details.
  */
 
+import java.time.ZonedDateTime
 import scala.concurrent.duration._
 import scala.concurrent.Future
 import akka.actor.{ Props, ActorRef, ActorLogging, Actor }
@@ -16,7 +17,7 @@ import akka.stream.scaladsl.{ Sink, Source, Flow }
 import akka.pattern.pipe
 import com.typesafe.config.{ Config, ConfigFactory }
 import ru.maizy.cheesecake.utils.CollectionsUtils
-import ru.maizy.cheesecake.{ Headers, Timestamp }
+import ru.maizy.cheesecake.Headers
 import ru.maizy.cheesecake.service.HttpEndpoint
 
 
@@ -56,7 +57,9 @@ class HttpCheckerActor(val materializer: ActorMaterializer) extends Actor with A
         .flatMap(checkResponse(_, includeResponse, endpoint))
         .recoverWith {
           // TODO: detect failure reason (DNS, connection failed, timeout ...)
-          case e: Throwable => Future.successful(HttpCheckResult(endpoint, CheckStatus.UnableToCheck, Timestamp.now()))
+          case e: Throwable => Future.successful(
+            HttpCheckResult(endpoint, CheckStatus.UnableToCheck, ZonedDateTime.now())
+          )
         }
     checkResult pipeTo sender
   }
@@ -79,7 +82,7 @@ class HttpCheckerActor(val materializer: ActorMaterializer) extends Actor with A
       response: HttpResponse,
       includeResponse: Boolean,
       endpoint: HttpEndpoint): Future[HttpCheckResult] = {
-    val time = Timestamp.now()
+    val time = ZonedDateTime.now()
     val checkStatus = response.status match {
       case StatusCodes.OK => CheckStatus.Ok
       case _ => CheckStatus.Unavailable

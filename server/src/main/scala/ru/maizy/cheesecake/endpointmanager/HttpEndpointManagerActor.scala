@@ -11,7 +11,7 @@ import akka.actor.{ Props, ActorRef }
 import akka.event.LoggingReceive
 import akka.pattern.{ ask, pipe }
 import ru.maizy.cheesecake.checker.{ HttpCheckResult, HttpCheck }
-import ru.maizy.cheesecake.service.HttpEndpoint
+import ru.maizy.cheesecake.service.{ EndpointStatus, HttpEndpoint }
 
 
 class HttpEndpointManagerActor(httpCheckerPool: ActorRef, endpoint: HttpEndpoint) extends EndpointManagerActor {
@@ -24,7 +24,7 @@ class HttpEndpointManagerActor(httpCheckerPool: ActorRef, endpoint: HttpEndpoint
   }
 
   def checkResultsHandler: Receive = {
-    case res: HttpCheckResult => log.debug(res.describe)
+    case res: HttpCheckResult => context.parent ! EndpointStatus(endpoint, res)
   }
 
   override def receive: Receive = LoggingReceive(checkResultsHandler orElse super.receive)

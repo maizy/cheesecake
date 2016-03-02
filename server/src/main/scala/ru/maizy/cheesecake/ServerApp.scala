@@ -6,16 +6,18 @@ package ru.maizy.cheesecake
  */
 
 import scala.concurrent.{ Future, ExecutionContext }
-import scala.io.StdIn
 import scala.concurrent.duration._
+import scala.io.StdIn
 import akka.actor.ActorSystem
+import akka.pattern.ask
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import ru.maizy.cheesecake.checker.HttpCheckerActor
-import ru.maizy.cheesecake.service.{ AddEndpoints, ServiceActor, Endpoint, Service, SymbolicAddress, HttpEndpoint }
+import ru.maizy.cheesecake.resultsstorage._
+import ru.maizy.cheesecake.service._
 import ru.maizy.cheesecake.utils.ActorUtils.escapeActorName
 
 
@@ -62,6 +64,8 @@ object ServerApp extends App {
   def hardcodedApp()(implicit system: ActorSystem, ec: ExecutionContext, mat: ActorMaterializer): Unit = {
     implicit val timeout = Timeout(30.seconds)
 
+    val storage = system.actorOf(InMemoryResultStorageActor.props(), "storage")
+
     val endpoint1 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/status")
     val endpoint2 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/")
     val endpoint3 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/not_found")
@@ -74,13 +78,30 @@ object ServerApp extends App {
     val httpChecker = system.actorOf(HttpCheckerActor.props(mat), name = "http-checker-1")
 
     val serviceActor = system.actorOf(
-      ServiceActor.props(service1, httpChecker, mat),
+      ServiceActor.props(service1, storage, httpChecker, mat),
       name = escapeActorName(s"service-${service1.name}")
+    )
+
+    val allAggregates: Seq[Aggregate] = Seq(
+      SimpleAggregate(AggregateType.LastFailedTimestamp),
+      SimpleAggregate(AggregateType.LastSuccessTimestamp),
+      SimpleAggregate(AggregateType.LastUnavailableTimestamp),
+      SimpleAggregate(AggregateType.UptimeChecks),
+      SimpleAggregate(AggregateType.UptimeDuration)
     )
 
     serviceActor ! AddEndpoints(endpoints)
 
-  }
+    system.scheduler.schedule(10.seconds, 10.seconds) {
+      (storage ? GetAllEndpoints)
+        .mapTo[AllEndpoints]
+        .foreach {
+          endpoints => println(s"All endpoints: $endpoints")
+          (storage ? GetAggregatedResults(endpoints.endpointsFqns, allAggregates))
+            .mapTo[AggregatedResults].foreach { res => println(s"AggregatedResults: $res") }
+        }
+      }
+    }
 
   // FIXME tmp
   def waitForTerminate(

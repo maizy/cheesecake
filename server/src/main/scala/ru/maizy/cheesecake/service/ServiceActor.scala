@@ -10,6 +10,7 @@ import scala.collection.mutable
 import akka.actor.{ Props, ActorRef, ActorLogging, Actor }
 import akka.stream.ActorMaterializer
 import ru.maizy.cheesecake.endpointmanager.{ HttpEndpointManagerActor, SetCheckInterval }
+import ru.maizy.cheesecake.resultsstorage.AddEndpointCheckResults
 import ru.maizy.cheesecake.utils.ActorUtils.escapeActorName
 import ru.maizy.cheesecake.utils.StreamUtils.createUniqueIdIterator
 
@@ -17,6 +18,7 @@ import ru.maizy.cheesecake.utils.StreamUtils.createUniqueIdIterator
 class ServiceActor(
     val service: Service,
     val httpCheckerPool: ActorRef,
+    val storage: ActorRef,
     implicit val materializer: ActorMaterializer)
   extends Actor
   with ActorLogging
@@ -26,9 +28,9 @@ class ServiceActor(
   val uniqueId = createUniqueIdIterator()
   val checkIterval = 15.seconds  // TODO: from config
 
-  def receive: Receive = handleEndpointMessages
+  def receive: Receive = handleEndpointManagementMessages orElse handleEndpointStatusMessages
 
-  def handleEndpointMessages: Receive = {
+  def handleEndpointManagementMessages: Receive = {
 
     case AddEndpoints(newEndpoints) =>
       for (endpoint <- newEndpoints) {
@@ -46,8 +48,14 @@ class ServiceActor(
         }
       }
 
-    case RemoveEndpoints => ???
-    case RemoveAllEndpoints => ???
+    case RemoveEndpoints => ???  // TODO
+    case RemoveAllEndpoints => ???  // TODO
+  }
+
+  def handleEndpointStatusMessages: Receive = {
+    case EndpointStatus(endpoint, res) =>
+      val endpointFqn = EndpointFQN(service, endpoint)
+      storage ! AddEndpointCheckResults(endpointFqn, Seq(res))
   }
 
   def generateEndpointActorName(endpoint: Endpoint): String = {
@@ -73,6 +81,6 @@ class ServiceActor(
 
 
 object ServiceActor {
-  def props(service: Service, httpChecker: ActorRef, materializer: ActorMaterializer): Props =
-    Props(new ServiceActor(service, httpChecker, materializer))
+  def props(service: Service, storage: ActorRef, httpChecker: ActorRef, materializer: ActorMaterializer): Props =
+    Props(new ServiceActor(service, storage, httpChecker, materializer))
 }
