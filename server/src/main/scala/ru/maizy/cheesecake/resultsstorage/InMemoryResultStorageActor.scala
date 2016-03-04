@@ -8,7 +8,7 @@ package ru.maizy.cheesecake.resultsstorage
 import akka.actor.{ Props, ActorLogging }
 import akka.event.LoggingReceive
 
-class InMemoryResultStorageActor extends ResultStorageActor with ActorLogging{
+class InMemoryResultStorageActor extends ResultStorageActor with ActorLogging {
 
   override def receive: Receive = LoggingReceive(
       handlerDataMessages orElse handlerRequestMessages

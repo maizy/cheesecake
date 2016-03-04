@@ -16,8 +16,9 @@ import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import ru.maizy.cheesecake.checker.HttpCheckerActor
-import ru.maizy.cheesecake.resultsstorage._
-import ru.maizy.cheesecake.service._
+import ru.maizy.cheesecake.resultsstorage.{ AggregatedResults, GetAggregatedResults, AllEndpoints, GetAllEndpoints }
+import ru.maizy.cheesecake.resultsstorage.{ Aggregate, AggregateType, SimpleAggregate, InMemoryResultStorageActor }
+import ru.maizy.cheesecake.service.{ AddEndpoints, ServiceActor, Endpoint, Service, SymbolicAddress, HttpEndpoint }
 import ru.maizy.cheesecake.utils.ActorUtils.escapeActorName
 
 

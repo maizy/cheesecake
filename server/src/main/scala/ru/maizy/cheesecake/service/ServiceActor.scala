@@ -8,6 +8,7 @@ package ru.maizy.cheesecake.service
 import scala.concurrent.duration._
 import scala.collection.mutable
 import akka.actor.{ Props, ActorRef, ActorLogging, Actor }
+import akka.event.LoggingReceive
 import akka.stream.ActorMaterializer
 import ru.maizy.cheesecake.endpointmanager.{ HttpEndpointManagerActor, SetCheckInterval }
 import ru.maizy.cheesecake.resultsstorage.AddEndpointCheckResults
@@ -17,8 +18,8 @@ import ru.maizy.cheesecake.utils.StreamUtils.createUniqueIdIterator
 
 class ServiceActor(
     val service: Service,
-    val httpCheckerPool: ActorRef,
     val storage: ActorRef,
+    val httpCheckerPool: ActorRef,
     implicit val materializer: ActorMaterializer)
   extends Actor
   with ActorLogging
@@ -28,7 +29,9 @@ class ServiceActor(
   val uniqueId = createUniqueIdIterator()
   val checkIterval = 15.seconds  // TODO: from config
 
-  def receive: Receive = handleEndpointManagementMessages orElse handleEndpointStatusMessages
+  def receive: Receive = LoggingReceive(
+      handleEndpointManagementMessages orElse handleEndpointStatusMessages
+    )
 
   def handleEndpointManagementMessages: Receive = {
 
