@@ -8,5 +8,9 @@ language: scala
 jdk:
   - oraclejdk8
 scala:
-   - 2.11.7
-script: ./run_ci_tests.sh
+  - 2.11.7
+script:
+  - sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport
+  - sbt ++$TRAVIS_SCALA_VERSION coverageAggregate
+after_success:
+  - sbt ++$TRAVIS_SCALA_VERSION coveralls
