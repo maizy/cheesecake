@@ -29,5 +29,8 @@ case class AggregatedResults(results: Map[EndpointFQN, Seq[AggregateResult[Any]]
 
 case class GetEndpointCheckResults(endpointsFqns: Seq[EndpointFQN], limit: Int = Int.MaxValue)
   extends ResultStorageProtocol
+{
+  require(limit >= 0)
+}
 
 case class EndpointCheckResults(results: Map[EndpointFQN, Seq[CheckResult]])

@@ -16,8 +16,9 @@ import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import ru.maizy.cheesecake.checker.HttpCheckerActor
-import ru.maizy.cheesecake.resultsstorage.{ AggregatedResults, GetAggregatedResults, AllEndpoints, GetAllEndpoints }
-import ru.maizy.cheesecake.resultsstorage.{ Aggregate, AggregateType, SimpleAggregate, InMemoryResultStorageActor }
+import ru.maizy.cheesecake.resultsstorage.{ EndpointCheckResults, GetEndpointCheckResults, AggregatedResults }
+import ru.maizy.cheesecake.resultsstorage.{ GetAggregatedResults, AllEndpoints, GetAllEndpoints, Aggregate }
+import ru.maizy.cheesecake.resultsstorage.{ AggregateType, SimpleAggregate, InMemoryResultStorageActor }
 import ru.maizy.cheesecake.service.{ AddEndpoints, ServiceActor, Endpoint, Service, SymbolicAddress, HttpEndpoint }
 import ru.maizy.cheesecake.utils.ActorUtils.escapeActorName
 
@@ -98,8 +99,19 @@ object ServerApp extends App {
         .mapTo[AllEndpoints]
         .foreach {
           endpoints => println(s"All endpoints: $endpoints")
-          (storage ? GetAggregatedResults(endpoints.endpointsFqns, allAggregates))
-            .mapTo[AggregatedResults].foreach { res => println(s"AggregatedResults: $res") }
+          val aggregateFuture = (storage ? GetAggregatedResults(endpoints.endpointsFqns, allAggregates))
+            .mapTo[AggregatedResults]
+
+          val checksFuture = (storage ? GetEndpointCheckResults(endpoints.endpointsFqns, limit = 10))
+            .mapTo[EndpointCheckResults]
+
+          for (
+            aggregatedRes <- aggregateFuture;
+            checks <- checksFuture
+          ) {
+            println(s"Checks: $checks")
+            println(s"AggregatedResults: $aggregatedRes")
+          }
         }
       }
     }

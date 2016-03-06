@@ -15,13 +15,20 @@ class InMemoryResultStorageActor extends ResultStorageActor with ActorLogging {
     )
 
   def handlerDataMessages: Receive = {
-    case AddEndpointCheckResults(endpointFqn, results) => ???
-    case CleanEndpointCheckResults(endpointFqn) => ???
+    case AddEndpointCheckResults(endpointFqn, results) =>  // FIXME
+    case CleanEndpointCheckResults(endpointFqn) =>  // FIXME
   }
 
   def handlerRequestMessages: Receive = {
-    case GetAllEndpoints => sender() ! AllEndpoints(Seq.empty)  // FIXME
-    case GetAggregatedResults(endpointsFqn, aggregates) => AggregatedResults(Map.empty)  // FIXME
+    case GetAllEndpoints =>
+      sender() ! AllEndpoints(Seq.empty)  // FIXME
+
+    case GetAggregatedResults(_, _) =>
+      sender() ! AggregatedResults(Map.empty)  // FIXME
+
+    case GetEndpointCheckResults(endpointsFqn, limit) =>
+      sender() ! EndpointCheckResults(Map.empty)  // FIXME
+
   }
 }
 
