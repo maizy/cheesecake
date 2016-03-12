@@ -16,7 +16,6 @@ case class HttpCheck(
 ) extends AbstractCheck(endpoint)
 
 case class HttpCheckResult(
-    endpoint: HttpEndpoint,
     status: CheckStatus.Type,
     checkTime: ZonedDateTime,
     httpStatus: Option[Int] = None,
@@ -25,7 +24,6 @@ case class HttpCheckResult(
 ) extends CheckResult {
 
   def describe: String =
-    s"$endpoint\n" +
     s"Status: $status HTTP: $httpStatus\n" +
     s"Headers: ${headers.getOrElse("<not parsed>")}\n" +
     s"Body: \n${body.map(" |" + _.utf8String.replace("\n", "\n |")).getOrElse("<not parsed>")}\n"

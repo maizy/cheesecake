@@ -19,7 +19,6 @@ abstract class AbstractCheck(endpoint: Endpoint) extends CheckerProtocol
 case class Check(endpoint: Endpoint) extends AbstractCheck(endpoint)
 
 trait CheckResult {
-  def endpoint: Endpoint
   def status: CheckStatus.Type
   def checkTime: ZonedDateTime
 }

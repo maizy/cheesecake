@@ -6,19 +6,23 @@ package ru.maizy.cheesecake.resultsstorage
  */
 
 import ru.maizy.cheesecake.checker.CheckResult
-import ru.maizy.cheesecake.service.EndpointFQN
+import ru.maizy.cheesecake.service.{ Service, EndpointFQN }
 
 sealed trait ResultStorageProtocol
 
 case class AddEndpointCheckResults(endpointFqn: EndpointFQN, results: Seq[CheckResult])
   extends ResultStorageProtocol
 
-case class CleanEndpointCheckResults(endpointFqn: EndpointFQN)
+case class ClearEndpointCheckResults(endpointFqn: EndpointFQN)
 
 
 case object GetAllEndpoints extends ResultStorageProtocol
 
 case class AllEndpoints(endpointsFqns: Seq[EndpointFQN])
+
+case object GetAllServices extends ResultStorageProtocol
+
+case class AllServices(services: Seq[Service])
 
 
 case class GetAggregatedResults(endpointsFqns: Seq[EndpointFQN], aggregates: Seq[Aggregate])

@@ -1,7 +1,6 @@
 <scalastyle>
     <name>Scalastyle configuration</name>
     <check level="error" class="org.scalastyle.file.FileTabChecker" enabled="true"/>
-    <check level="error" class="org.scalastyle.scalariform.ImportGroupingChecker" enabled="true"/>
     <check level="error" class="org.scalastyle.file.FileLengthChecker" enabled="true">
         <parameters>
             <parameter name="maxFileLength"><![CDATA[800]]></parameter>

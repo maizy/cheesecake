@@ -54,11 +54,11 @@ class HttpCheckerActor(val materializer: ActorMaterializer) extends Actor with A
       Source.single(HttpRequest(uri = endpoint.path))
         .via(buildFlow(endpoint))
         .runWith(Sink.head)
-        .flatMap(checkResponse(_, includeResponse, endpoint))
+        .flatMap(checkResponse(_, includeResponse))
         .recoverWith {
           // TODO: detect failure reason (DNS, connection failed, timeout ...)
           case e: Throwable => Future.successful(
-            HttpCheckResult(endpoint, CheckStatus.UnableToCheck, ZonedDateTime.now())
+            HttpCheckResult(CheckStatus.UnableToCheck, ZonedDateTime.now())
           )
         }
     checkResult pipeTo sender
@@ -78,10 +78,7 @@ class HttpCheckerActor(val materializer: ActorMaterializer) extends Actor with A
     )
   }
 
-  def checkResponse(
-      response: HttpResponse,
-      includeResponse: Boolean,
-      endpoint: HttpEndpoint): Future[HttpCheckResult] = {
+  def checkResponse(response: HttpResponse, includeResponse: Boolean): Future[HttpCheckResult] = {
     val time = ZonedDateTime.now()
     val checkStatus = response.status match {
       case StatusCodes.OK => CheckStatus.Ok
@@ -97,7 +94,6 @@ class HttpCheckerActor(val materializer: ActorMaterializer) extends Actor with A
       case _ => None
     }
     val result = HttpCheckResult(
-      endpoint,
       checkStatus,
       time,
       httpStatus = Some(response.status.intValue()),
