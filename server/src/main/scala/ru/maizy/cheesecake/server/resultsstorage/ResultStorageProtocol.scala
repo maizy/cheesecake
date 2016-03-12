@@ -28,7 +28,7 @@ case class AllServices(services: Seq[Service])
 case class GetAggregatedResults(endpointsFqns: Seq[EndpointFQN], aggregates: Seq[Aggregate])
   extends ResultStorageProtocol
 
-case class AggregatedResults(results: Map[EndpointFQN, Seq[AggregateResult[Any]]])
+case class AggregatedResults(results: Map[EndpointFQN, Map[Aggregate, AggregateResult[Any]]])
 
 
 case class GetEndpointCheckResults(endpointsFqns: Seq[EndpointFQN], limit: Int = Int.MaxValue)
@@ -37,4 +37,6 @@ case class GetEndpointCheckResults(endpointsFqns: Seq[EndpointFQN], limit: Int =
   require(limit >= 0)
 }
 
-case class EndpointCheckResults(results: Map[EndpointFQN, Seq[CheckResult]])
+
+// Ordered from newest to oldest
+case class EndpointCheckResults(results: Map[EndpointFQN, IndexedSeq[CheckResult]])

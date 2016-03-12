@@ -18,8 +18,8 @@ import com.typesafe.config.ConfigFactory
 import ru.maizy.cheesecake.server.resultsstorage.{ Aggregate, AggregateType, AggregatedResults, AllEndpoints }
 import ru.maizy.cheesecake.server.resultsstorage.{ EndpointCheckResults, GetAggregatedResults, GetAllEndpoints }
 import ru.maizy.cheesecake.server.resultsstorage.{ GetEndpointCheckResults, InMemoryResultStorageActor }
-import ru.maizy.cheesecake.server.resultsstorage.SimpleAggregate
-import ru.maizy.cheesecake.server.checker.HttpCheckerActor
+import ru.maizy.cheesecake.server.resultsstorage.{ LastResultAggregate, SimpleAggregate }
+import ru.maizy.cheesecake.server.checker.{ CheckStatus, HttpCheckerActor }
 import ru.maizy.cheesecake.server.service.{ AddEndpoints, Endpoint, HttpEndpoint, Service, ServiceActor }
 import ru.maizy.cheesecake.server.service.SymbolicAddress
 import ru.maizy.cheesecake.server.utils.ActorUtils.escapeActorName
@@ -87,9 +87,9 @@ object ServerApp extends App {
     )
 
     val allAggregates: Seq[Aggregate] = Seq(
-      SimpleAggregate(AggregateType.LastFailedTimestamp),
-      SimpleAggregate(AggregateType.LastSuccessTimestamp),
-      SimpleAggregate(AggregateType.LastUnavailableTimestamp),
+      LastResultAggregate(CheckStatus.Unavailable),
+      LastResultAggregate(CheckStatus.Ok),
+      LastResultAggregate(CheckStatus.UnableToCheck),
       SimpleAggregate(AggregateType.UptimeChecks),
       SimpleAggregate(AggregateType.UptimeDuration)
     )

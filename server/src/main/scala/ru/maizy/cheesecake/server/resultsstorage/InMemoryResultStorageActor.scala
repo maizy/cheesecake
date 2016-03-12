@@ -26,7 +26,7 @@ class InMemoryResultStorageActor extends ResultStorageActor with ActorLogging {
     // TODO: make those vars configurable
     val checksLimit: Int = 10
     val maxFutureShift = 2000  // ms
-    val maxPastShift = 10000 // ms
+    val maxPastShift = 60 * 1000 // ms
 
     def uptimeDuration(to: ZonedDateTime = ZonedDateTime.now()): Option[Duration] =
       uptimeUntil.map(Duration.between(_, to))
@@ -79,6 +79,7 @@ class InMemoryResultStorageActor extends ResultStorageActor with ActorLogging {
         if (uptimeUntil.isEmpty || uptimeUntil.get.isAfter(check.checkTime)) {
           uptimeUntil = Some(check.checkTime)
         }
+        uptimeChecks += 1
       } else {
         // TODO: recount by an iteration, currenty assumed that the new check last in the queue (iss #16)
         uptimeChecks = 0
@@ -109,20 +110,63 @@ class InMemoryResultStorageActor extends ResultStorageActor with ActorLogging {
     case GetAllServices =>
       sender() ! AllServices(results.keys.map(_.service).toSeq)
 
-    case GetAggregatedResults(_, _) =>
-      sender() ! AggregatedResults(Map.empty)  // FIXME
+    case GetAggregatedResults(endpointFqns, aggregates) =>
+      val res = for (endpoint <- endpointFqns) yield endpoint -> getEndpointAggregates(endpoint, aggregates)
+      sender() ! AggregatedResults(res.toMap)
 
     case GetEndpointCheckResults(endpointsFqn, limit) =>
       val res = endpointsFqn.map { endpointFqn =>
         results.get(endpointFqn) match {
           case Some(endpointResults) =>
-            endpointFqn -> endpointResults.checks.take(limit)
+            endpointFqn -> endpointResults.checks.takeRight(limit).reverse.toIndexedSeq
           case None =>
-            endpointFqn -> Seq.empty
+            endpointFqn -> IndexedSeq.empty
         }
       }.toMap
       sender() ! EndpointCheckResults(res)
 
+  }
+
+  def getEndpointAggregates(endpoint: EndpointFQN, aggregates: Seq[Aggregate]): Map[Aggregate, AggregateResult[Any]] = {
+    val pairs = for(
+      aggregate <- aggregates;
+      res <- getAggregate(endpoint, aggregate) match {
+        case Left(error) =>
+          log.warning(s"Unable to get aggregate $aggregate for $endpoint: $error")
+          None
+        case Right(result) =>
+          Some(result)
+      }
+    ) yield aggregate -> res
+    pairs.toMap
+  }
+
+  def getAggregate(endpoint: EndpointFQN, aggregate: Aggregate): Either[String, AggregateResult[Any]] = {
+    val cell = results.get(endpoint)
+    aggregate match {
+      case LastResultAggregate(status) =>
+        Right(OptionalDateTimeResult(
+          aggregate,
+          cell.flatMap(_.lastStatus.get(status))
+        ))
+
+      case SimpleAggregate(AggregateType.UptimeChecks) =>
+        Right(IntResult(
+          aggregate,
+          cell.map(_.uptimeChecks).getOrElse(0)
+        ))
+
+      case SimpleAggregate(AggregateType.UptimeDuration) =>
+        Right(DurationResult(
+          aggregate,
+          cell
+            .flatMap(_.uptimeUntil)
+            .map { r => Duration.between(r, ZonedDateTime.now()) }
+            .getOrElse(Duration.ZERO)
+        ))
+
+      case other: Aggregate => Left(s"Unknown aggregate: $other")
+    }
   }
 }
 

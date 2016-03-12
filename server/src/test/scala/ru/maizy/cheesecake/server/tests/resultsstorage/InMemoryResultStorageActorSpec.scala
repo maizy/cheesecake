@@ -8,14 +8,17 @@ package ru.maizy.cheesecake.server.tests.resultsstorage
 import java.time.temporal.ChronoUnit
 import java.time.{ Duration, ZonedDateTime }
 import scala.collection.immutable.Queue
+import scala.concurrent.duration.DurationInt
 import akka.testkit.TestActorRef
 import org.scalatest.FlatSpecLike
 import ru.maizy.cheesecake.server.checker.{ CheckResult, CheckStatus, HttpCheckResult }
-import ru.maizy.cheesecake.server.resultsstorage.{ ClearEndpointCheckResults, AddEndpointCheckResults, AggregateType }
-import ru.maizy.cheesecake.server.resultsstorage.{ SimpleAggregate, EndpointCheckResults, GetEndpointCheckResults}
-import ru.maizy.cheesecake.server.resultsstorage.{ AggregatedResults, GetAggregatedResults, AllEndpoints }
-import ru.maizy.cheesecake.server.resultsstorage.{ GetAllEndpoints, InMemoryResultStorageActor }
-import ru.maizy.cheesecake.server.service.{ EndpointFQN, Service, SymbolicAddress, HttpEndpoint }
+import ru.maizy.cheesecake.server.resultsstorage.{ ClearEndpointCheckResults, OptionalDateTimeResult }
+import ru.maizy.cheesecake.server.resultsstorage.{ AddEndpointCheckResults, AggregateType, SimpleAggregate }
+import ru.maizy.cheesecake.server.resultsstorage.{ AggregatedResults, EndpointCheckResults, GetEndpointCheckResults }
+import ru.maizy.cheesecake.server.resultsstorage.{ AllEndpoints, GetAggregatedResults, GetAllEndpoints }
+import ru.maizy.cheesecake.server.resultsstorage.{ DurationResult, InMemoryResultStorageActor, IntResult }
+import ru.maizy.cheesecake.server.resultsstorage.LastResultAggregate
+import ru.maizy.cheesecake.server.service.{ EndpointFQN, HttpEndpoint, Service, SymbolicAddress }
 import ru.maizy.cheesecake.server.tests.ActorSystemBaseSpec
 
 
@@ -34,21 +37,28 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
 
     val baseTime = ZonedDateTime.now()
 
-    val successfulCheckResults: IndexedSeq[HttpCheckResult] = Range(0, CHECKS_LIMIT + 5)
-      .map { i =>
-        HttpCheckResult(
-          CheckStatus.Ok,
-          baseTime.plus(Duration.of((i + 1) * 10, ChronoUnit.MILLIS))
-        )
-      }
+    val successfulCheckResults: IndexedSeq[HttpCheckResult] =
+      Range(0, CHECKS_LIMIT + 5).map(i => checkResult((i + 1) * 10, CheckStatus.Ok))
 
+
+    val lastUnavailable = LastResultAggregate(CheckStatus.Unavailable)
+    val lastOk = LastResultAggregate(CheckStatus.Ok)
+    val lastUnableToCheck = LastResultAggregate(CheckStatus.UnableToCheck)
+    val uptimeChecks = SimpleAggregate(AggregateType.UptimeChecks)
+    val uptimeDuration = SimpleAggregate(AggregateType.UptimeDuration)
     val allAggregates = Seq(
-      SimpleAggregate(AggregateType.LastFailedTimestamp),
-      SimpleAggregate(AggregateType.LastSuccessTimestamp),
-      SimpleAggregate(AggregateType.LastUnavailableTimestamp),
-      SimpleAggregate(AggregateType.UptimeChecks),
-      SimpleAggregate(AggregateType.UptimeDuration)
+      lastUnavailable,
+      lastOk,
+      lastUnableToCheck,
+      uptimeChecks,
+      uptimeDuration
     )
+
+    def checkResult(shift: Int, status: CheckStatus.Type): HttpCheckResult =
+      HttpCheckResult(
+        status,
+        baseTime.plus(Duration.of(shift, ChronoUnit.MILLIS))
+      )
   }
 
   trait WithSyncActorAndSampleData extends SampleData {
@@ -94,10 +104,111 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
       expectMsg(AggregatedResults(Map.empty))
 
       ref ! GetAggregatedResults(Seq(endpointFqn, otherEndpointFqn), Seq.empty)
-      expectMsg(AggregatedResults(Map.empty))
+      expectMsg(AggregatedResults(Map(
+        endpointFqn -> Map.empty,
+        otherEndpointFqn -> Map.empty
+      )))
 
       ref ! GetAggregatedResults(Seq.empty, allAggregates)
       expectMsg(AggregatedResults(Map.empty))
+
+      // TODO: an empty result aggregate with an existing endpoint
+    }
+  }
+
+  it should "returns Last*" in {
+    new SampleData {
+      val timeout = 3.seconds   // may be increased for a debugger session
+
+      val timeShift = Stream.iterate(0)(_ + 1).iterator
+      for (status <- CheckStatus.values) {
+        println(s"Check $status")
+        val ref = system.actorOf(InMemoryResultStorageActor.props())
+        val aggregate = LastResultAggregate(status)
+        val resultBuilder = () => checkResult(timeShift.next(), status)
+        val otherResultsBuilder: () => Seq[HttpCheckResult] = () =>
+          CheckStatus.values.filterNot(_ == status).map(checkResult(timeShift.next(), _)).toSeq
+
+        // add other check status types
+        ref ! AddEndpointCheckResults(endpointFqn, otherResultsBuilder())
+
+        // should not affect the current aggregate
+        ref ! GetAggregatedResults(Seq(endpointFqn), Seq(aggregate))
+        expectMsg(timeout, AggregatedResults(Map(
+          endpointFqn -> Map(
+            aggregate ->  OptionalDateTimeResult(aggregate, None)
+          )
+        )))
+
+        // add current type check
+        val result = resultBuilder()
+        ref ! AddEndpointCheckResults(endpointFqn, Seq(result))
+
+        // should returns it as a result
+        ref ! GetAggregatedResults(Seq(endpointFqn), Seq(aggregate))
+        expectMsg(timeout, AggregatedResults(Map(
+          endpointFqn -> Map(
+            aggregate ->  OptionalDateTimeResult(aggregate, Some(result.checkTime))
+          )
+        )))
+
+        // add other check status types ...
+        ref ! AddEndpointCheckResults(endpointFqn, otherResultsBuilder())
+
+        // should not affect the current aggregate
+        ref ! GetAggregatedResults(Seq(endpointFqn), Seq(aggregate))
+        expectMsg(timeout, AggregatedResults(Map(
+          endpointFqn -> Map(
+            aggregate ->  OptionalDateTimeResult(aggregate, Some(result.checkTime))
+          )
+        )))
+
+        // an old result should replaced by the new result
+        val newerResult = resultBuilder()
+        ref ! AddEndpointCheckResults(endpointFqn, Seq(newerResult))
+
+        ref ! GetAggregatedResults(Seq(endpointFqn), Seq(aggregate))
+        expectMsg(timeout, AggregatedResults(Map(
+          endpointFqn -> Map(
+            aggregate ->  OptionalDateTimeResult(aggregate, Some(newerResult.checkTime))
+          )
+        )))
+      }
+    }
+  }
+
+  it should "returns uptime checks & duration" in {
+    val timeout = 3.minutes   // may be increased for a debugger session
+    val timeShift = Stream.iterate(0)(_ + 1).iterator
+
+    new WithAsyncActorAndSampleData {
+      ref ! GetAggregatedResults(Seq(endpointFqn), Seq(uptimeChecks, uptimeDuration))
+      expectMsg(timeout, AggregatedResults(Map(
+        endpointFqn -> Map(
+          uptimeChecks -> IntResult(uptimeChecks, 0),
+          uptimeDuration -> DurationResult(uptimeDuration, Duration.ZERO)
+        )
+      )))
+
+      val successChecks = Range(0, 3).map(_ => checkResult(timeShift.next(), CheckStatus.Ok))
+      ref ! AddEndpointCheckResults(endpointFqn, successChecks)
+
+      ref ! GetAggregatedResults(Seq(endpointFqn), Seq(uptimeChecks, uptimeDuration))
+
+      val msg = expectMsgClass(timeout, classOf[AggregatedResults])
+      val endpointRes = msg.results(endpointFqn)
+      endpointRes(uptimeChecks).asInstanceOf[IntResult] shouldBe IntResult(uptimeChecks, 3)
+      endpointRes(uptimeDuration).asInstanceOf[DurationResult].result should be >= Duration.between(
+        successfulCheckResults(0).checkTime, ZonedDateTime.now())
+
+      ref ! AddEndpointCheckResults(endpointFqn, Seq(checkResult(timeShift.next(), CheckStatus.Unavailable)))
+
+      ref ! GetAggregatedResults(Seq(endpointFqn), Seq(uptimeChecks, uptimeDuration))
+      expectMsg(timeout, AggregatedResults(Map(
+        endpointFqn -> Map(
+          uptimeChecks -> IntResult(uptimeChecks, 0),
+          uptimeDuration -> DurationResult(uptimeDuration, Duration.ZERO)
+      ))))
     }
   }
 
@@ -107,7 +218,35 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
       expectMsg(EndpointCheckResults(Map.empty))
 
       ref ! GetEndpointCheckResults(Seq(endpointFqn, otherEndpointFqn), limit = 0)
-      expectMsg(EndpointCheckResults(Map(endpointFqn -> Seq(), otherEndpointFqn -> Seq())))
+      expectMsg(EndpointCheckResults(Map(
+        endpointFqn -> IndexedSeq.empty,
+        otherEndpointFqn -> IndexedSeq.empty
+      )))
+    }
+  }
+
+  it should "return all stored results" in {
+    new WithAsyncActorAndSampleData {
+      ref ! AddEndpointCheckResults(endpointFqn, successfulCheckResults)
+      ref ! AddEndpointCheckResults(otherEndpointFqn, successfulCheckResults.take(3))
+      ref ! GetEndpointCheckResults(Seq(otherEndpointFqn, endpointFqn))
+      expectMsg(EndpointCheckResults(Map(
+        otherEndpointFqn -> successfulCheckResults.take(3).reverse,
+        endpointFqn -> successfulCheckResults.takeRight(CHECKS_LIMIT).reverse
+      )))
+    }
+  }
+
+  it should "return limited results" in {
+    new WithAsyncActorAndSampleData {
+      ref ! AddEndpointCheckResults(endpointFqn, successfulCheckResults)
+      ref ! AddEndpointCheckResults(otherEndpointFqn, successfulCheckResults.take(5))
+
+      ref ! GetEndpointCheckResults(Seq(endpointFqn, otherEndpointFqn), limit = 3)
+      expectMsg(EndpointCheckResults(Map(
+        endpointFqn -> successfulCheckResults.takeRight(3).reverse,
+        otherEndpointFqn -> successfulCheckResults.slice(2, 5).reverse
+      )))
     }
   }
 
