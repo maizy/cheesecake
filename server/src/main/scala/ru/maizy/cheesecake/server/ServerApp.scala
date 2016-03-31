@@ -20,6 +20,7 @@ import ru.maizy.cheesecake.server.resultsstorage.{ EndpointCheckResults, GetAggr
 import ru.maizy.cheesecake.server.resultsstorage.{ GetEndpointCheckResults, InMemoryResultStorageActor }
 import ru.maizy.cheesecake.server.resultsstorage.{ LastResultAggregate, SimpleAggregate }
 import ru.maizy.cheesecake.server.checker.{ CheckStatus, HttpCheckerActor }
+import ru.maizy.cheesecake.server.jsonapi.JsonApi
 import ru.maizy.cheesecake.server.service.{ AddEndpoints, Endpoint, HttpEndpoint, Service, ServiceActor }
 import ru.maizy.cheesecake.server.service.SymbolicAddress
 import ru.maizy.cheesecake.server.utils.ActorUtils.escapeActorName

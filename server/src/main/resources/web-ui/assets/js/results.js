@@ -45,7 +45,12 @@
     };
 
     ResultsComponent.prototype._initWs = function() {
-        var ws = new global.WebSocket(this._config.wsStateUrl);
+        var wsUrl = this._config.wsStateUrl;
+        if (wsUrl.substr(0, 1) == "/") {
+            var proto = global.location.protocol == 'https:' ? 'wss:' : 'ws:';
+            wsUrl = proto + "//" + global.location.host + wsUrl
+        }
+        var ws = new global.WebSocket(wsUrl);
 
         this._stateWs = ws;
 
