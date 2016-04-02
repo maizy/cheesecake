@@ -5,29 +5,76 @@ package ru.maizy.cheesecake.server.jsonapi
  * See LICENSE.txt for details.
  */
 
-import akka.actor.ActorSystem
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.duration.DurationInt
+import akka.actor.{ ActorRef, ActorSystem }
+import akka.pattern.ask
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import ru.maizy.cheesecake.server.jsonapi.models.AppConfigs
+import akka.util.Timeout
+import ru.maizy.cheesecake.server.checker.CheckStatus
+import ru.maizy.cheesecake.server.jsonapi.models.{ AppConfigs, FullView }
+import ru.maizy.cheesecake.server.resultsstorage.{ AggregateType, AggregatedResults, AllEndpoints }
+import ru.maizy.cheesecake.server.resultsstorage.{ GetAggregatedResults, GetAllEndpoints, LastResultAggregate }
+import ru.maizy.cheesecake.server.resultsstorage.SimpleAggregate
 
 
-class JsonApi(system: ActorSystem, host: String, port: Int) extends JsonMarshalers {
+class JsonApi(system: ActorSystem, host: String, port: Int) extends JsonApiMarshallers {
+  implicit val ec: ExecutionContext = system.dispatcher
+  implicit val timeout: Timeout = 20.seconds
+
+  private var _storageRef: Option[ActorRef] = None
 
   private val services: Route =
-    (path("state" / "full_view") & get) {
-      complete {
-        "full view"
+    path("state" / "full_view") {
+      get {
+        complete {
+          fullView()
+        }
       }
     }
 
-  private val configs: Route = (path("configs") & get) {
-    complete {
-      // TODO: build from app config
-      AppConfigs(wsStateUrl = "/ws/state")
+  private val configs: Route =
+    path("configs") {
+      get {
+        complete {
+          // TODO: build from app config
+          AppConfigs(wsStateUrl = "/ws/state")
+        }
+      }
     }
-  }
-  val routes: Route = logRequestResult("cheesecake-json-api") { // TODO: how it works
-    configs ~ pathPrefix("services")(services)
+
+  val routes: Route = logRequestResult("cheesecake-json-api") {
+    configs ~
+      pathPrefix("services") {
+        services
+      }
   }
 
+  def storageRef: Future[ActorRef] =
+    if (_storageRef.isEmpty) {
+      val future = system.actorSelection("/user/storage").resolveOne
+      future.onSuccess {
+        case ref: ActorRef => _storageRef = Some(ref)
+      }
+      future
+    } else {
+      Future.successful(_storageRef.get)
+    }
+
+  def fullView(): Future[FullView] = storageRef.flatMap { storage =>
+    for(
+      endpoints <- (storage ? GetAllEndpoints).mapTo[AllEndpoints];
+      aggregates <- (storage ? GetAggregatedResults(
+        endpoints.endpointsFqns,
+        Seq(
+          SimpleAggregate(AggregateType.UptimeDuration),
+          SimpleAggregate(AggregateType.UptimeChecks),
+          LastResultAggregate(CheckStatus.Ok),
+          LastResultAggregate(CheckStatus.Unavailable),
+          LastResultAggregate(CheckStatus.UnableToCheck)
+        )
+      )).mapTo[AggregatedResults]
+    ) yield FullView(endpoints.endpointsFqns, aggregates.toString)  // FIXME: tmp
+  }
 }

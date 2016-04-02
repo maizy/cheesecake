@@ -5,6 +5,7 @@ package ru.maizy.cheesecake.server
  * See LICENSE.txt for details.
  */
 
+import java.net.InetAddress
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.io.StdIn
@@ -22,7 +23,7 @@ import ru.maizy.cheesecake.server.resultsstorage.{ LastResultAggregate, SimpleAg
 import ru.maizy.cheesecake.server.checker.{ CheckStatus, HttpCheckerActor }
 import ru.maizy.cheesecake.server.jsonapi.JsonApi
 import ru.maizy.cheesecake.server.service.{ AddEndpoints, Endpoint, HttpEndpoint, Service, ServiceActor }
-import ru.maizy.cheesecake.server.service.SymbolicAddress
+import ru.maizy.cheesecake.server.service.{ IpAddress, SymbolicAddress }
 import ru.maizy.cheesecake.server.utils.ActorUtils.escapeActorName
 
 
@@ -37,8 +38,9 @@ object ServerApp extends App {
       .parseString(
         s"""
           |akka.http.client.user-agent-header = cheesecake/${Version.literal}
+          |akka.http.server.server-header = cheesecake/${Version.literal} (akka-http/$${akka.version})
         """.stripMargin
-      ) withFallback loadedConfig
+      ).resolveWith(loadedConfig) withFallback loadedConfig
 
     implicit val system: ActorSystem = ActorSystem("cheesecake-server", config)
     implicit val materializer = ActorMaterializer()
@@ -73,7 +75,8 @@ object ServerApp extends App {
 
     val endpoint1 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/status")
     val endpoint2 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/")
-    val endpoint3 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/not_found")
+    val endpoint3 = HttpEndpoint(
+      IpAddress(InetAddress.getByAddress(Array(127, 0, 0, 1).map(_.toByte))), 80, "/not_found")
     val endpoint4 = HttpEndpoint(SymbolicAddress("non.exists"), 80, "/")
 
     val service1 = Service("nginx")
