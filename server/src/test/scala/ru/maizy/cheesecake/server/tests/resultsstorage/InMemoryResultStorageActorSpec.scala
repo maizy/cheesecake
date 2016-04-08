@@ -136,7 +136,7 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
         ref ! GetAggregatedResults(Seq(endpointFqn), Seq(aggregate))
         expectMsg(timeout, AggregatedResults(Map(
           endpointFqn -> Map(
-            aggregate ->  OptionalDateTimeResult(aggregate, None)
+            aggregate ->  OptionalDateTimeResult(None)
           )
         )))
 
@@ -148,7 +148,7 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
         ref ! GetAggregatedResults(Seq(endpointFqn), Seq(aggregate))
         expectMsg(timeout, AggregatedResults(Map(
           endpointFqn -> Map(
-            aggregate ->  OptionalDateTimeResult(aggregate, Some(result.checkTime))
+            aggregate ->  OptionalDateTimeResult(Some(result.checkTime))
           )
         )))
 
@@ -159,7 +159,7 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
         ref ! GetAggregatedResults(Seq(endpointFqn), Seq(aggregate))
         expectMsg(timeout, AggregatedResults(Map(
           endpointFqn -> Map(
-            aggregate ->  OptionalDateTimeResult(aggregate, Some(result.checkTime))
+            aggregate ->  OptionalDateTimeResult(Some(result.checkTime))
           )
         )))
 
@@ -170,7 +170,7 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
         ref ! GetAggregatedResults(Seq(endpointFqn), Seq(aggregate))
         expectMsg(timeout, AggregatedResults(Map(
           endpointFqn -> Map(
-            aggregate ->  OptionalDateTimeResult(aggregate, Some(newerResult.checkTime))
+            aggregate ->  OptionalDateTimeResult(Some(newerResult.checkTime))
           )
         )))
       }
@@ -185,8 +185,8 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
       ref ! GetAggregatedResults(Seq(endpointFqn), Seq(uptimeChecks, uptimeDuration))
       expectMsg(timeout, AggregatedResults(Map(
         endpointFqn -> Map(
-          uptimeChecks -> IntResult(uptimeChecks, 0),
-          uptimeDuration -> DurationResult(uptimeDuration, Duration.ZERO)
+          uptimeChecks -> IntResult(0),
+          uptimeDuration -> DurationResult(Duration.ZERO)
         )
       )))
 
@@ -197,7 +197,7 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
 
       val msg = expectMsgClass(timeout, classOf[AggregatedResults])
       val endpointRes = msg.results(endpointFqn)
-      endpointRes(uptimeChecks).asInstanceOf[IntResult] shouldBe IntResult(uptimeChecks, 3)
+      endpointRes(uptimeChecks).asInstanceOf[IntResult] shouldBe IntResult(3)
       endpointRes(uptimeDuration).asInstanceOf[DurationResult].result should be >= Duration.between(
         successfulCheckResults(0).checkTime, ZonedDateTime.now())
 
@@ -206,8 +206,8 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
       ref ! GetAggregatedResults(Seq(endpointFqn), Seq(uptimeChecks, uptimeDuration))
       expectMsg(timeout, AggregatedResults(Map(
         endpointFqn -> Map(
-          uptimeChecks -> IntResult(uptimeChecks, 0),
-          uptimeDuration -> DurationResult(uptimeDuration, Duration.ZERO)
+          uptimeChecks -> IntResult(0),
+          uptimeDuration -> DurationResult(Duration.ZERO)
       ))))
     }
   }

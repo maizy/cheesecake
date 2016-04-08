@@ -146,19 +146,16 @@ class InMemoryResultStorageActor extends ResultStorageActor with ActorLogging {
     aggregate match {
       case LastResultAggregate(status) =>
         Right(OptionalDateTimeResult(
-          aggregate,
           cell.flatMap(_.lastStatus.get(status))
         ))
 
       case SimpleAggregate(AggregateType.UptimeChecks) =>
         Right(IntResult(
-          aggregate,
           cell.map(_.uptimeChecks).getOrElse(0)
         ))
 
       case SimpleAggregate(AggregateType.UptimeDuration) =>
         Right(DurationResult(
-          aggregate,
           cell
             .flatMap(_.uptimeUntil)
             .map { r => Duration.between(r, ZonedDateTime.now()) }

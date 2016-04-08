@@ -75,6 +75,6 @@ class JsonApi(system: ActorSystem, host: String, port: Int) extends JsonApiMarsh
           LastResultAggregate(CheckStatus.UnableToCheck)
         )
       )).mapTo[AggregatedResults]
-    ) yield FullView(endpoints.endpointsFqns, aggregates.toString)  // FIXME: tmp
+    ) yield FullView.groupAggregatedResults(aggregates.results)
   }
 }

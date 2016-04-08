@@ -1,9 +1,8 @@
-package ru.maizy.cheesecake.server.marshalers
+package ru.maizy.cheesecake.server.marshallers
 
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import spray.json.{ DefaultJsonProtocol, JsObject, JsString, JsValue, RootJsonFormat }
+import spray.json.{ JsObject, JsString, JsValue, RootJsonFormat }
 import spray.json.{ JsNumber, pimpAny }
-import ru.maizy.cheesecake.server.service.{ Endpoint, EndpointFQN, HttpAddress, HttpEndpoint, IpAddress, Service}
+import ru.maizy.cheesecake.server.service.{ Endpoint, EndpointFQN, HttpAddress, HttpEndpoint, IpAddress, Service }
 import ru.maizy.cheesecake.server.service.SymbolicAddress
 
 /**
@@ -12,7 +11,7 @@ import ru.maizy.cheesecake.server.service.SymbolicAddress
  */
 
 // TODO: how to use only writer for case classes
-trait CommonJsonMarshallers extends SprayJsonSupport with DefaultJsonProtocol {
+trait ServiceJsonMarshallers extends JsonMarshaller {
   implicit val serviceFormat = jsonFormat1(Service)
 
   implicit object IpAddressFormat extends RootJsonFormat[IpAddress] {

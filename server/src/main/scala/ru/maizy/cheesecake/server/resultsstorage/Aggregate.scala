@@ -1,10 +1,12 @@
 package ru.maizy.cheesecake.server.resultsstorage
 
-import ru.maizy.cheesecake.server.checker.CheckStatus
 /**
  * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
  * See LICENSE.txt for details.
  */
+
+import ru.maizy.cheesecake.core.utils.StringUtils
+import ru.maizy.cheesecake.server.checker.CheckStatus
 
 object AggregateType extends Enumeration {
   type TypeKey = Value
@@ -13,11 +15,15 @@ object AggregateType extends Enumeration {
 }
 
 sealed trait Aggregate {
-  def key: AggregateType.TypeKey
+  def typeKey: AggregateType.TypeKey
+  def uniqueKey: String = toString
 }
 
-case class SimpleAggregate(key: AggregateType.TypeKey) extends Aggregate
+case class SimpleAggregate(typeKey: AggregateType.TypeKey) extends Aggregate {
+  override def uniqueKey: String = StringUtils.upperCaseToDashes(typeKey.toString)
+}
 
 case class LastResultAggregate(status: CheckStatus.Type) extends Aggregate {
-  val key = AggregateType.LastResult
+  val typeKey = AggregateType.LastResult
+  override def uniqueKey: String = "last-" + StringUtils.upperCaseToDashes(status.toString)
 }

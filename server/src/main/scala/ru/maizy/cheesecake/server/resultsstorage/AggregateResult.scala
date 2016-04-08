@@ -5,23 +5,21 @@ package ru.maizy.cheesecake.server.resultsstorage
  * See LICENSE.txt for details.
  */
 
-import java.time.{ ZonedDateTime, Duration }
+import java.time.{ Duration, ZonedDateTime }
+import ru.maizy.cheesecake.core.utils.StringUtils
 
 
 sealed trait AggregateResult[+T] {
-  def aggregate: Aggregate
   def result: T
+  def typeCode: String = StringUtils.upperCaseToDashes(this.getClass.getSimpleName)
 }
 
 sealed trait OptionalAggregateResult[+T] extends AggregateResult[Option[T]]
 
-case class IntResult(aggregate: Aggregate, result: Int) extends AggregateResult[Int]
+case class IntResult(result: Int) extends AggregateResult[Int]
 
-case class OptionalIntResult(aggregate: Aggregate, result: Option[Int])
-  extends OptionalAggregateResult[Int]
-
-case class OptionalDateTimeResult(aggregate: Aggregate, result: Option[ZonedDateTime])
+case class OptionalDateTimeResult(result: Option[ZonedDateTime])
   extends OptionalAggregateResult[ZonedDateTime]
 
-case class DurationResult(aggregate: Aggregate, result: Duration)
+case class DurationResult(result: Duration)
   extends AggregateResult[Duration]

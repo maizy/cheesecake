@@ -67,7 +67,7 @@ object ServerApp extends App {
     waitForTerminate(bindingFuture)
   }
 
-  // FIXME tmp
+  // FIXME tmp (will be replaced by generation from config)
   def hardcodedApp()(implicit system: ActorSystem, ec: ExecutionContext, mat: ActorMaterializer): Unit = {
     implicit val timeout = Timeout(30.seconds)
 
@@ -80,47 +80,26 @@ object ServerApp extends App {
     val endpoint4 = HttpEndpoint(SymbolicAddress("non.exists"), 80, "/")
 
     val service1 = Service("nginx")
+    val service2 = Service("my_backend")
 
-    val endpoints: Set[Endpoint] = Set(endpoint1, endpoint2, endpoint3, endpoint4)
+    val endpoints1: Set[Endpoint] = Set(endpoint1, endpoint2, endpoint3)
+    val endpoints2: Set[Endpoint] = Set(endpoint4)
 
     val httpChecker = system.actorOf(HttpCheckerActor.props(mat), name = "http-checker-1")
 
-    val serviceActor = system.actorOf(
+    val serviceActor1 = system.actorOf(
       ServiceActor.props(service1, storage, httpChecker, mat),
       name = escapeActorName(s"service-${service1.name}")
     )
 
-    val allAggregates: Seq[Aggregate] = Seq(
-      LastResultAggregate(CheckStatus.Unavailable),
-      LastResultAggregate(CheckStatus.Ok),
-      LastResultAggregate(CheckStatus.UnableToCheck),
-      SimpleAggregate(AggregateType.UptimeChecks),
-      SimpleAggregate(AggregateType.UptimeDuration)
+    val serviceActor2 = system.actorOf(
+      ServiceActor.props(service2, storage, httpChecker, mat),
+      name = escapeActorName(s"service-${service2.name}")
     )
 
-    serviceActor ! AddEndpoints(endpoints)
-
-    system.scheduler.schedule(10.seconds, 10.seconds) {
-      (storage ? GetAllEndpoints)
-        .mapTo[AllEndpoints]
-        .foreach {
-          endpoints => println(s"All endpoints: $endpoints")
-          val aggregateFuture = (storage ? GetAggregatedResults(endpoints.endpointsFqns, allAggregates))
-            .mapTo[AggregatedResults]
-
-          val checksFuture = (storage ? GetEndpointCheckResults(endpoints.endpointsFqns, limit = 10))
-            .mapTo[EndpointCheckResults]
-
-          for (
-            aggregatedRes <- aggregateFuture;
-            checks <- checksFuture
-          ) {
-            println(s"Checks: $checks")
-            println(s"AggregatedResults: $aggregatedRes")
-          }
-        }
-      }
-    }
+    serviceActor1 ! AddEndpoints(endpoints1)
+    serviceActor2 ! AddEndpoints(endpoints2)
+  }
 
   // FIXME tmp
   def waitForTerminate(
