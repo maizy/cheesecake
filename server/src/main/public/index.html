@@ -1,18 +1,20 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <title>cheesecake</title>
     <meta charset="utf-8"/>
+    <link href="/assets/stylesheets/main.css" rel="stylesheet" type="text/css"/>
 </head>
 
 <body>
 
 <h1>State</h1>
 
-<div id="container"/>
+<div id="container"></div>
 
 <script src="/assets/js/http-utils.js"></script>
 <script src="/assets/js/results.js"></script>
+<script src="/libs/immutable/dist/immutable.min.js"></script>
 <script>
     cheesecake.results = new cheesecake.ResultsComponent({
         container: document.getElementById("container"),

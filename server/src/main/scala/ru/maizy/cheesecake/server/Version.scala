@@ -1,5 +1,7 @@
 package ru.maizy.cheesecake.server
 
+import java.util.Properties
+
 /**
  * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
  * See LICENSE.txt for details.
@@ -7,8 +9,9 @@ package ru.maizy.cheesecake.server
 
 
 object Version {
-  val asSeq: Seq[Int] = Seq(0, 0, 1)
-  val literal: String = asSeq.mkString(".")
+
+  val literal: String = BuildInfo.version
+  val asSeq: Seq[Int] = literal.split(".").map(_.toInt)
 
   override def toString: String = literal
 }

@@ -9,9 +9,19 @@ _TBA_
 
 `sbt test`
 
-## Start the server
 
-`sbt server/run`
+## Start the server in dev mode
+
+Dev requirements: node 4.1+, npm 2.5+.
+
+Run server in dev mode
+`sbt -DassetsMode=dev server/run`
+
+Compile assets:
+`sbt server/compile:assets`
+
+or start in the watch mode (after any changes happens assets will be automatically recompiled):
+`sbt ~server/compile:assets`
 
 
 ## Compile all artifacts

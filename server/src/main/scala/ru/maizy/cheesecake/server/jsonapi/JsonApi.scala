@@ -12,8 +12,9 @@ import akka.pattern.ask
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
+import ru.maizy.cheesecake.server.{ BuildInfo, Version }
 import ru.maizy.cheesecake.server.checker.CheckStatus
-import ru.maizy.cheesecake.server.jsonapi.models.{ AppConfigs, FullView }
+import ru.maizy.cheesecake.server.jsonapi.models.{ AppConfigs, AppVersion, FullView }
 import ru.maizy.cheesecake.server.resultsstorage.{ AggregateType, AggregatedResults, AllEndpoints }
 import ru.maizy.cheesecake.server.resultsstorage.{ GetAggregatedResults, GetAllEndpoints, LastResultAggregate }
 import ru.maizy.cheesecake.server.resultsstorage.SimpleAggregate
@@ -38,17 +39,28 @@ class JsonApi(system: ActorSystem, host: String, port: Int) extends JsonApiMarsh
     path("configs") {
       get {
         complete {
-          // TODO: build from app config
           AppConfigs(wsStateUrl = "/ws/state")
         }
       }
     }
 
+  private val status: Route =
+    path("version") {
+      get {
+        complete {
+          AppVersion(Version.literal, BuildInfo.buildTime)
+        }
+      }
+    } ~ path("status") {
+      get {
+        complete("ok")
+      }
+    }
+
   val routes: Route = logRequestResult("cheesecake-json-api") {
     configs ~
-      pathPrefix("services") {
-        services
-      }
+    status ~
+    pathPrefix("services")(services)
   }
 
   def storageRef: Future[ActorRef] =
