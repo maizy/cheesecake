@@ -17,6 +17,7 @@ script:
   - npm install -g npm@'>=2.5'
   - node --version
   - npm --version
+  - sbt ++$TRAVIS_SCALA_VERSION 'compile:assets' || true
   - sbt ++$TRAVIS_SCALA_VERSION clean coverage test coverageReport
   - sbt ++$TRAVIS_SCALA_VERSION coverageAggregate
 after_success:
