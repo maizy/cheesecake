@@ -68,3 +68,4 @@ libraryDependencies ++= Seq(
   "org.webjars.npm" % "react-dom" % reactVersion,
   "org.webjars.npm" % "bootstrap" % bootstrapVersion
 )
+includeFilter in (Assets, LessKeys.less) := "*.page.less"

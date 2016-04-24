@@ -1,0 +1,29 @@
+@import "../common";
+
+.status-table {
+
+  .extra {
+    .value {
+      color: #666;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+  }
+
+  @bg-lightness: 30%;
+  .status {
+    &.unable-to-check {
+      background: lighten(@color-unable-to-check, @bg-lightness);
+    }
+
+    &.ok {
+      background: lighten(@color-ok, @bg-lightness);
+    }
+
+    &.unavailable {
+      background: lighten(@color-unavailable, @bg-lightness);
+    }
+  }
+}
