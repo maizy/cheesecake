@@ -9,10 +9,14 @@ import java.util.Properties
  */
 case object BuildInfo {
 
-  private val buildProperties: Map[String, Option[String]] = {
+  private val props: Properties = {
     val props = new Properties
     Option(getClass.getClassLoader.getResourceAsStream("buildinfo.properties"))
       .foreach(props.load)
+    props
+  }
+
+  private val buildProperties: Map[String, Option[String]] = {
     Map(
       "version" -> Option(props.getProperty("version")),
       "name" -> Option(props.getProperty("name")),
@@ -28,5 +32,8 @@ case object BuildInfo {
       .map { t => ZonedDateTime.ofInstant(Instant.ofEpochMilli(t.toLong), utc) }
       .getOrElse(ZonedDateTime.now().withZoneSameInstant(utc))
   }
+
+  def getFrontendLibVersion(lib: String): Option[String] =
+    Option(props.getProperty(s"frontend.$lib"))
 
 }
