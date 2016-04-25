@@ -1,0 +1,163 @@
+{
+  "services_results": {
+    "total_services": 2,
+    "total_endpoints": 3,
+    "services": [{
+      "total_endpoints": 2,
+      "service": {
+        "name": "nginx"
+      },
+      "endpoints": [{
+        "endpoint": {
+          "path": "/status",
+          "port": 80,
+          "address": {
+            "type": "symbolic",
+            "hostname": "localhost"
+          },
+          "headers": null,
+          "type": "http"
+        },
+        "aggregates": {
+          "last-unable-to-check": {
+            "value": null,
+            "type": "optional-date-time-result"
+          },
+          "last-ok": {
+            "value": {
+              "timestamp": 1461566340,
+              "minute": 39,
+              "year": 2016,
+              "hour": 9,
+              "weekday_iso8601": 1,
+              "second": 0,
+              "local_formated": "25.04.2016 09:39:00",
+              "local_iso8601": "2016-04-25T09:39:00.671+03:00",
+              "zone": "Europe/Moscow",
+              "day": 25,
+              "month": 4
+            },
+            "type": "optional-date-time-result"
+          },
+          "last-unavailable": {
+            "value": null,
+            "type": "optional-date-time-result"
+          },
+          "uptime-duration": {
+            "value": {
+              "iso8601": "PT6.412S",
+              "seconds": 6
+            },
+            "type": "duration-result"
+          },
+          "uptime-checks": {
+            "value": 1,
+            "type": "int-result"
+          }
+        }
+      }, {
+        "endpoint": {
+          "path": "/",
+          "port": 80,
+          "address": {
+            "type": "symbolic",
+            "hostname": "localhost"
+          },
+          "headers": null,
+          "type": "http"
+        },
+        "aggregates": {
+          "last-unable-to-check": {
+            "value": null,
+            "type": "optional-date-time-result"
+          },
+          "last-ok": {
+            "value": null,
+            "type": "optional-date-time-result"
+          },
+          "last-unavailable": {
+            "value": {
+              "timestamp": 1461566343,
+              "minute": 39,
+              "year": 2016,
+              "hour": 9,
+              "weekday_iso8601": 1,
+              "second": 3,
+              "local_formated": "25.04.2016 09:39:03",
+              "local_iso8601": "2016-04-25T09:39:03.434+03:00",
+              "zone": "Europe/Moscow",
+              "day": 25,
+              "month": 4
+            },
+            "type": "optional-date-time-result"
+          },
+          "uptime-duration": {
+            "value": {
+              "iso8601": "PT0S",
+              "seconds": 0
+            },
+            "type": "duration-result"
+          },
+          "uptime-checks": {
+            "value": 0,
+            "type": "int-result"
+          }
+        }
+      }]
+    }, {
+      "total_endpoints": 1,
+      "service": {
+        "name": "my_backend"
+      },
+      "endpoints": [{
+        "endpoint": {
+          "path": "/",
+          "port": 80,
+          "address": {
+            "type": "symbolic",
+            "hostname": "non.exists"
+          },
+          "headers": null,
+          "type": "http"
+        },
+        "aggregates": {
+          "last-unable-to-check": {
+            "value": {
+              "timestamp": 1461566340,
+              "minute": 39,
+              "year": 2016,
+              "hour": 9,
+              "weekday_iso8601": 1,
+              "second": 0,
+              "local_formated": "25.04.2016 09:39:00",
+              "local_iso8601": "2016-04-25T09:39:00.004+03:00",
+              "zone": "Europe/Moscow",
+              "day": 25,
+              "month": 4
+            },
+            "type": "optional-date-time-result"
+          },
+          "last-ok": {
+            "value": null,
+            "type": "optional-date-time-result"
+          },
+          "last-unavailable": {
+            "value": null,
+            "type": "optional-date-time-result"
+          },
+          "uptime-duration": {
+            "value": {
+              "iso8601": "PT0S",
+              "seconds": 0
+            },
+            "type": "duration-result"
+          },
+          "uptime-checks": {
+            "value": 0,
+            "type": "int-result"
+          }
+        }
+      }]
+    }]
+  }
+}

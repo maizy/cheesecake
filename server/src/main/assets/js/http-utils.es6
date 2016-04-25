@@ -3,17 +3,19 @@
   * See LICENSE.txt for details.
   */
 
-(function(global) {
-    HttpUtils = {};
+define(
+function()
+{
+    const HttpUtils = {};
 
-    var Error = function (message, additional) {
+    const Error = function (message, additional) {
         this.success = false;
         this.message = message;
         this.additional = additional || {};
     };
     HttpUtils.Error = Error;
 
-    var Success = function (data, additional) {
+    const Success = function (data, additional) {
         this.success = true;
         this.data = data;
         this.additional = additional || {};
@@ -22,7 +24,7 @@
 
     HttpUtils.getJson = function (basePath, relPath, cb, debug_cb) {
         debug_cb = debug_cb || function() {};
-        var xhr = new global.XMLHttpRequest();
+        var xhr = new XMLHttpRequest();
         var url = basePath + relPath;
         debug_cb("> GET " + url);
         xhr.open("GET", url, true);
@@ -30,7 +32,7 @@
         xhr.onreadystatechange = function () {
             var res;
 
-            if (xhr.readyState != global.XMLHttpRequest.DONE) return;
+            if (xhr.readyState != XMLHttpRequest.DONE) return;
 
             if (xhr.status != 200) {
                 cb(new Error(
@@ -40,7 +42,7 @@
             } else {
 
                 try {
-                    res = new Success(global.JSON.parse(xhr.responseText));
+                    res = new Success(JSON.parse(xhr.responseText));
                 } catch (e) {
                     res = new Error("Unable to parse json from " + url, {error: e});
                 }
@@ -49,6 +51,5 @@
         };
         return cb;
     };
-    global.cheesecake = global.cheesecake || {};
-    global.cheesecake.HttpUtils = HttpUtils;
-})(window);
+    return HttpUtils;
+});

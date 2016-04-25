@@ -31,7 +31,11 @@
 
 
     <div class="row">
-        <div id="results-container">
+        <div id="status-table-container"></div>
+
+        <hr style="padding: 20px 0;"/>
+
+        <div>
             <table class="table table-bordered status-table">
                 <thead>
                     <tr>
@@ -78,19 +82,7 @@
 
 </div>
 
-<script src="/libs/immutable/3.8.1/dist/immutable.min.js"></script>
-<script src="/libs/react/15.0.1/dist/react.min.js"></script>
-<script src="/libs/react-dom/15.0.1/dist/react-dom.min.js"></script>
-
-<script src="/assets/js/http-utils.js"></script>
-
-<!--<script src="/assets/js/results.js"></script>-->
-<!--<script>-->
-    <!--cheesecake.results = new cheesecake.ResultsComponent({-->
-        <!--container: document.getElementById("container"),-->
-        <!--apiBase: ""-->
-    <!--});-->
-<!--</script>-->
+<script data-main="/assets/js/pages/status-page" src="/libs/requirejs/2.2.0/require.js"></script>
 
 </body>
 </html>

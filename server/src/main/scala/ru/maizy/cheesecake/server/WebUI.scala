@@ -41,7 +41,8 @@ class WebUI(system: ActorSystem) {
           "immutable" -> BuildInfo.getFrontendLibVersion("immutable").get,
           "react" -> BuildInfo.getFrontendLibVersion("react").get,
           "react-dom" -> BuildInfo.getFrontendLibVersion("react").get,
-          "bootstrap" -> BuildInfo.getFrontendLibVersion("bootstrap").get
+          "bootstrap" -> BuildInfo.getFrontendLibVersion("bootstrap").get,
+          "requirejs" -> BuildInfo.getFrontendLibVersion("requirejs").get
         )
 
         frontendLibs.collect { case(lib, version) =>

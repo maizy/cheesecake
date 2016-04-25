@@ -11,6 +11,7 @@ val akkaStreamsVersion = akkaVersion
 val immutableJsVersion = "3.8.1"
 val reactVersion = "15.0.1"
 val bootstrapVersion = "3.3.6"
+val requireJsVersion = "2.2.0"
 
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.1.3",
@@ -54,7 +55,8 @@ resourceGenerators in Compile += Def.task {
     s"buildTime=${System.currentTimeMillis()}",
     s"frontend.immutable=$immutableJsVersion",
     s"frontend.react=$reactVersion",
-    s"frontend.bootstrap=$bootstrapVersion"
+    s"frontend.bootstrap=$bootstrapVersion",
+    s"frontend.requirejs=$requireJsVersion"
   ).mkString("\n")
   IO.write(file, contents)
   Seq(file)
@@ -63,6 +65,7 @@ resourceGenerators in Compile += Def.task {
 // Frontend settings
 JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
 libraryDependencies ++= Seq(
+  "org.webjars.npm" % "requirejs" % requireJsVersion,
   "org.webjars.npm" % "immutable" % immutableJsVersion,
   "org.webjars.npm" % "react" % reactVersion,
   "org.webjars.npm" % "react-dom" % reactVersion,
