@@ -7,6 +7,7 @@ package ru.maizy.cheesecake.server.resultsstorage
 
 import java.time.{ Duration, ZonedDateTime }
 import ru.maizy.cheesecake.core.utils.StringUtils
+import ru.maizy.cheesecake.server.checker.CheckStatus
 
 
 sealed trait AggregateResult[+T] {
@@ -23,3 +24,6 @@ case class OptionalDateTimeResult(result: Option[ZonedDateTime])
 
 case class DurationResult(result: Duration)
   extends AggregateResult[Duration]
+
+case class OptionalStatusResult(result: Option[CheckStatus.Type])
+  extends OptionalAggregateResult[CheckStatus.Type]

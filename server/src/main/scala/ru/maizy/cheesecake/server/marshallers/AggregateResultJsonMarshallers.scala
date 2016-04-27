@@ -5,7 +5,9 @@ package ru.maizy.cheesecake.server.marshallers
  * See LICENSE.txt for details.
  */
 
+import ru.maizy.cheesecake.core.utils.StringUtils.upperCaseToDashes
 import ru.maizy.cheesecake.server.resultsstorage.{ AggregateResult, DurationResult, IntResult, OptionalDateTimeResult }
+import ru.maizy.cheesecake.server.resultsstorage.OptionalStatusResult
 import spray.json.{ JsNull, JsNumber, JsObject, JsString, JsValue, RootJsonFormat, pimpAny }
 
 trait AggregateResultJsonMarshallers
@@ -25,9 +27,10 @@ trait AggregateResultJsonMarshallers
       case int: IntResult => JsNumber(int.result)
 
       case optDateTime: OptionalDateTimeResult =>
-        optDateTime.result
-          .map(v => v.toJson)
-          .getOrElse(JsNull)
+        optDateTime.result match {
+          case Some(dateTime) => dateTime.toJson
+          case None => JsNull
+        }
 
       case durationRes: DurationResult =>
         JsObject(
@@ -35,6 +38,12 @@ trait AggregateResultJsonMarshallers
           "seconds" -> JsNumber(durationRes.result.getSeconds)
           // TODO: human readable format like 2d1h30m45s
         )
+
+      case optStatusRes: OptionalStatusResult =>
+        optStatusRes.result match {
+          case Some(statusType) => JsString(upperCaseToDashes(statusType.toString))
+          case None => JsNull
+        }
     }
 
     def read(json: JsValue): AggregateResult[Any] = ???

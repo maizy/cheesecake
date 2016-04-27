@@ -12,12 +12,12 @@ import scala.concurrent.duration.DurationInt
 import akka.testkit.TestActorRef
 import org.scalatest.FlatSpecLike
 import ru.maizy.cheesecake.server.checker.{ CheckResult, CheckStatus, HttpCheckResult }
-import ru.maizy.cheesecake.server.resultsstorage.{ ClearEndpointCheckResults, OptionalDateTimeResult }
-import ru.maizy.cheesecake.server.resultsstorage.{ AddEndpointCheckResults, AggregateType, SimpleAggregate }
-import ru.maizy.cheesecake.server.resultsstorage.{ AggregatedResults, EndpointCheckResults, GetEndpointCheckResults }
-import ru.maizy.cheesecake.server.resultsstorage.{ AllEndpoints, GetAggregatedResults, GetAllEndpoints }
-import ru.maizy.cheesecake.server.resultsstorage.{ DurationResult, InMemoryResultStorageActor, IntResult }
-import ru.maizy.cheesecake.server.resultsstorage.LastResultAggregate
+import ru.maizy.cheesecake.server.resultsstorage.{ AddEndpointCheckResults, AggregateType, AggregatedResults }
+import ru.maizy.cheesecake.server.resultsstorage.{ AllEndpoints, ClearEndpointCheckResults, DurationResult }
+import ru.maizy.cheesecake.server.resultsstorage.{ EndpointCheckResults, GetAggregatedResults, GetAllEndpoints }
+import ru.maizy.cheesecake.server.resultsstorage.{ GetEndpointCheckResults, InMemoryResultStorageActor, IntResult }
+import ru.maizy.cheesecake.server.resultsstorage.{ LastResultAggregate, OptionalDateTimeResult, OptionalStatusResult }
+import ru.maizy.cheesecake.server.resultsstorage.SimpleAggregate
 import ru.maizy.cheesecake.server.service.{ EndpointFQN, HttpEndpoint, Service, SymbolicAddress }
 import ru.maizy.cheesecake.server.tests.ActorSystemBaseSpec
 
@@ -46,12 +46,14 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
     val lastUnableToCheck = LastResultAggregate(CheckStatus.UnableToCheck)
     val uptimeChecks = SimpleAggregate(AggregateType.UptimeChecks)
     val uptimeDuration = SimpleAggregate(AggregateType.UptimeDuration)
+    val currentStatus = SimpleAggregate(AggregateType.CurrentStatus)
     val allAggregates = Seq(
       lastUnavailable,
       lastOk,
       lastUnableToCheck,
       uptimeChecks,
-      uptimeDuration
+      uptimeDuration,
+      currentStatus
     )
 
     def checkResult(shift: Int, status: CheckStatus.Type): HttpCheckResult =
@@ -178,7 +180,7 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
   }
 
   it should "returns uptime checks & duration" in {
-    val timeout = 3.minutes   // may be increased for a debugger session
+    val timeout = 3.seconds   // may be increased for a debugger session
     val timeShift = Stream.iterate(0)(_ + 1).iterator
 
     new WithAsyncActorAndSampleData {
@@ -209,6 +211,36 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
           uptimeChecks -> IntResult(0),
           uptimeDuration -> DurationResult(Duration.ZERO)
       ))))
+    }
+  }
+
+  it should "returns CurrentStatus" in {
+    val timeout = 3.seconds   // may be increased for a debugger session
+
+    new WithAsyncActorAndSampleData {
+
+      ref ! GetAggregatedResults(Seq(endpointFqn), Seq(currentStatus))
+      expectMsg(timeout, AggregatedResults(Map(
+        endpointFqn -> Map(
+          currentStatus -> OptionalStatusResult(None)
+        )
+      )))
+
+      ref ! AddEndpointCheckResults(endpointFqn, Seq(checkResult(0, CheckStatus.Ok)))
+      ref ! GetAggregatedResults(Seq(endpointFqn), Seq(currentStatus))
+      expectMsg(timeout, AggregatedResults(Map(
+        endpointFqn -> Map(
+          currentStatus -> OptionalStatusResult(Some(CheckStatus.Ok))
+        )
+      )))
+
+      ref ! AddEndpointCheckResults(endpointFqn, Seq(checkResult(10, CheckStatus.UnableToCheck)))
+      ref ! GetAggregatedResults(Seq(endpointFqn), Seq(currentStatus))
+      expectMsg(timeout, AggregatedResults(Map(
+        endpointFqn -> Map(
+          currentStatus -> OptionalStatusResult(Some(CheckStatus.Ok))
+        )
+      )))
     }
   }
 

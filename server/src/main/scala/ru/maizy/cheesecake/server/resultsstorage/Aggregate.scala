@@ -11,7 +11,7 @@ import ru.maizy.cheesecake.server.checker.CheckStatus
 object AggregateType extends Enumeration {
   type TypeKey = Value
 
-  val UptimeDuration, UptimeChecks, LastResult = Value
+  val UptimeDuration, UptimeChecks, LastResult, CurrentStatus = Value
 }
 
 sealed trait Aggregate {
