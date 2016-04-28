@@ -20,12 +20,9 @@ function(
     StatusTable
 )
 {
-
     ReactDOM.render(
         <StatusTable.StatusTable />,
         document.getElementById('status-table-container')
     );
-
-
 });
 

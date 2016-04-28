@@ -4,14 +4,16 @@ define(
     "immutable",
     "http-utils",
     "components/extra-info",
-    "components/endpoint"
+    "components/endpoint",
+    "react-mixins/set-interval"
 ],
 function(
     React,
     Immutable,
     HttpUtils,
     ExtraInfo,
-    Endpoint
+    Endpoint,
+    SetIntervalMixin
 ) {
 
     const STATUS_TABLE_STATUSES = {
@@ -77,14 +79,22 @@ function(
         }
     });
 
+    const REFRESH_INTERVAL = 5000;  // ms
+
     const StatusTable = React.createClass({
+        mixins: [SetIntervalMixin],
         getInitialState: function () {
             return {
                 status: STATUS_TABLE_STATUSES.loading
             };
         },
         componentDidMount: function () {
-            HttpUtils.getJson("/", "assets/status-stub.json", res => {
+            this.refreshStatusTable(() => {
+                this.addInterval(this.refreshStatusTable, REFRESH_INTERVAL);
+            });
+        },
+        refreshStatusTable: function(onReady) {
+            HttpUtils.getJson("/services/state/full_view", "", res => {
                 if (res.success) {
                     let immutableRes = Immutable.fromJS(res.data["services_results"]);
                     this.setState({
@@ -97,6 +107,7 @@ function(
                         error: res.message
                     });
                 }
+                onReady ? (onReady.bind(this))() : null;
             });
         },
         render: function () {
