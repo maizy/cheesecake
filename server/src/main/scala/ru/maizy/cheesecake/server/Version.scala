@@ -1,7 +1,5 @@
 package ru.maizy.cheesecake.server
 
-import java.util.Properties
-
 /**
  * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
  * See LICENSE.txt for details.

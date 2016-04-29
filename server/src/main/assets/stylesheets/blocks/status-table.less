@@ -4,7 +4,7 @@
 
   .extra {
     .value {
-      color: #666;
+      color: @more-info-color;
     }
     ul {
       list-style: none;
@@ -14,16 +14,32 @@
 
   @bg-lightness: 30%;
   .status {
-    &.unable-to-check {
+    &__unable-to-check {
       background: lighten(@color-unable-to-check, @bg-lightness);
     }
 
-    &.ok {
+    &__ok {
       background: lighten(@color-ok, @bg-lightness);
     }
 
-    &.unavailable {
+    &__unavailable {
       background: lighten(@color-unavailable, @bg-lightness);
+    }
+    width: 30%;
+  }
+
+  .service {
+    width: 20%;
+  }
+
+  .endpoint {
+    width: 50%;
+  }
+
+  .status-info {
+    &_more {
+      color: @more-info-color;
+      font-style: italic;
     }
   }
 }

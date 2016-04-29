@@ -42,7 +42,8 @@ class WebUI(system: ActorSystem) {
           "react" -> BuildInfo.getFrontendLibVersion("react").get,
           "react-dom" -> BuildInfo.getFrontendLibVersion("react").get,
           "bootstrap" -> BuildInfo.getFrontendLibVersion("bootstrap").get,
-          "requirejs" -> BuildInfo.getFrontendLibVersion("requirejs").get
+          "requirejs" -> BuildInfo.getFrontendLibVersion("requirejs").get,
+          "humanize-duration" -> BuildInfo.getFrontendLibVersion("humanizeduration").get
         )
 
         frontendLibs.collect { case(lib, version) =>

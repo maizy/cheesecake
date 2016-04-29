@@ -1,3 +1,8 @@
+/**
+  * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
+  * See LICENSE.txt for details.
+  */
+
 define(
 [
     "react",
@@ -5,7 +10,8 @@ define(
     "http-utils",
     "components/extra-info",
     "components/endpoint",
-    "react-mixins/set-interval"
+    "react-mixins/set-interval",
+    "components/status"
 ],
 function(
     React,
@@ -13,7 +19,8 @@ function(
     HttpUtils,
     ExtraInfo,
     Endpoint,
-    SetIntervalMixin
+    SetIntervalMixin,
+    Status
 ) {
 
     const STATUS_TABLE_STATUSES = {
@@ -26,15 +33,18 @@ function(
 
     const StatusCell = React.createClass({
         render: function () {
+            const status = this.props.aggregates.get("current-status").get("value");
             return (
-                <td className="status"/>
+                <td className={`status status__${status}`}>
+                    <Status aggregates={this.props.aggregates}/>
+                </td>
             );
         }
     });
 
     const EndpointRow = React.createClass({
         render: function () {
-            let serviceNameCell = this.props.isFirst ?
+            const serviceNameCell = this.props.isFirst ?
                 (
                     <td className="service"
                         rowSpan={this.props.thisServiceEndpointsAmount}>
@@ -42,12 +52,11 @@ function(
                     </td>
                 )
                 : null;
-
             return (
                 <tr>
                     {serviceNameCell}
                     <td className="endpoint"><Endpoint.EndpointName endpoint={this.props.endpoint}/></td>
-                    <StatusCell/>
+                    <StatusCell aggregates={this.props.aggregates}/>
                     {/* <td className="extra"><ExtraInfo /></td> */}
                 </tr>
             );
@@ -112,7 +121,7 @@ function(
         },
         render: function () {
             const status = this.state.status;
-            var content = null;
+            let content = null;
             if (status == STATUS_TABLE_STATUSES.loading) {
                 content = <StatusTableAlert type="info" message="Loading ..."/>;
             } else if (status == STATUS_TABLE_STATUSES.hasData) {
@@ -124,6 +133,7 @@ function(
                                          isFirst={index == 0}
                                          endpoint={endpoint.get("endpoint")}
                                          service={service.get("service")}
+                                         aggregates={endpoint.get("aggregates")}
                             />
                         );
                     });

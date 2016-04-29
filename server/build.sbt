@@ -12,6 +12,7 @@ val immutableJsVersion = "3.8.1"
 val reactVersion = "15.0.1"
 val bootstrapVersion = "3.3.6"
 val requireJsVersion = "2.2.0"
+val humanizeDuration = "3.7.1"
 
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.1.3",
@@ -56,7 +57,8 @@ resourceGenerators in Compile += Def.task {
     s"frontend.immutable=$immutableJsVersion",
     s"frontend.react=$reactVersion",
     s"frontend.bootstrap=$bootstrapVersion",
-    s"frontend.requirejs=$requireJsVersion"
+    s"frontend.requirejs=$requireJsVersion",
+    s"frontend.humanizeduration=$humanizeDuration"
   ).mkString("\n")
   IO.write(file, contents)
   Seq(file)
@@ -69,6 +71,7 @@ libraryDependencies ++= Seq(
   "org.webjars.npm" % "immutable" % immutableJsVersion,
   "org.webjars.npm" % "react" % reactVersion,
   "org.webjars.npm" % "react-dom" % reactVersion,
-  "org.webjars.npm" % "bootstrap" % bootstrapVersion
+  "org.webjars.npm" % "bootstrap" % bootstrapVersion,
+  "org.webjars.npm" % "humanize-duration" % humanizeDuration
 )
 includeFilter in (Assets, LessKeys.less) := "*.page.less"

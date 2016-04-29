@@ -1,3 +1,8 @@
+/**
+  * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
+  * See LICENSE.txt for details.
+  */
+
 define(
 [
     "react"
@@ -7,18 +12,25 @@ function(
 ) {
     const EndpointName = React.createClass({
         render: function () {
-            // FIXME: all types support
-
             const endpoint = this.props.endpoint;
-            return (
-                <span>
-                http://
-                {endpoint.get("address").get("hostname")}
-                :
-                {endpoint.get("port")}
-                {endpoint.get("path")}
-            </span>
-            );
+            const type = endpoint.get("type");
+            switch (type) {
+                case "http":
+                    return (<span>
+                        http://
+                        {endpoint.get("address").get("hostname")}
+                        :
+                        {endpoint.get("port")}
+                        {endpoint.get("path")}
+                    </span>
+                    );
+
+                default:
+                    return <span>Unknown type: {type}</span>;
+
+            }
+
+
         }
     });
     return {
