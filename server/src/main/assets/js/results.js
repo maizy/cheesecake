@@ -3,6 +3,7 @@
   * See LICENSE.txt for details.
   */
 
+// FIXME require js
 (function(global) {
 
     // Currently I don't need any js fw, KISS

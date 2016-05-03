@@ -1,0 +1,45 @@
+@import "../common";
+
+.status-table {
+
+  .extra {
+    .value {
+      color: @more-info-color;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+  }
+
+  @bg-lightness: 30%;
+  .status {
+    &__unable-to-check {
+      background: lighten(@color-unable-to-check, @bg-lightness);
+    }
+
+    &__ok {
+      background: lighten(@color-ok, @bg-lightness);
+    }
+
+    &__unavailable {
+      background: lighten(@color-unavailable, @bg-lightness);
+    }
+    width: 30%;
+  }
+
+  .service {
+    width: 20%;
+  }
+
+  .endpoint {
+    width: 50%;
+  }
+
+  .status-info {
+    &_more {
+      color: @more-info-color;
+      font-style: italic;
+    }
+  }
+}
