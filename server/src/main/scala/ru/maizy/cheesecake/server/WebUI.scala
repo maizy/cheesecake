@@ -54,7 +54,8 @@ class WebUI(system: ActorSystem) {
         }.reduce((a, b) => a ~ b)
       }
     } else {
-      val projectWebjar = s"$WEBJARS/${BuildInfo.projectName}/$Version"
+      val webjarsRoot = s"META-INF/resources/$WEBJARS"
+      val projectWebjar = s"$webjarsRoot/${BuildInfo.projectName}/$Version"
       pathSingleSlash {
         encodeResponse {
           get(getFromResource(s"$projectWebjar/index.html"))
@@ -67,7 +68,7 @@ class WebUI(system: ActorSystem) {
       } ~
       pathPrefix(LIBS) {
         encodeResponse {
-          get(getFromResourceDirectory(WEBJARS))
+          get(getFromResourceDirectory(webjarsRoot))
         }
       }
     }
