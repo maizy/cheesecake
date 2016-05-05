@@ -20,12 +20,14 @@ case object BuildInfo {
     Map(
       "version" -> Option(props.getProperty("version")),
       "name" -> Option(props.getProperty("name")),
-      "buildTime" -> Option(props.getProperty("buildTime"))
+      "buildTime" -> Option(props.getProperty("buildTime")),
+      "organization" -> Option(props.getProperty("organization"))
     )
   }
 
   def version: String = buildProperties("version").getOrElse("0.0.0")
-  def projectName: String = buildProperties("name").getOrElse("cheesecake-server")
+  def projectName: String = buildProperties("name").getOrElse("unknown")
+  def organization: String = buildProperties("organization").getOrElse("unknown")
   def buildTime: ZonedDateTime = {
     val utc = ZoneId.of("UTC")
     buildProperties("buildTime")

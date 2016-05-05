@@ -13,7 +13,8 @@ val humanizeDuration = "3.7.1"
 
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.1.3",
-  "com.github.scopt" %% "scopt" % "3.3.0",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.4.0",
+  "com.github.scopt" %% "scopt" % "3.4.0",
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
   "com.typesafe.akka" %% "akka-stream" % akkaStreamsVersion,
@@ -38,6 +39,7 @@ resourceGenerators in Compile += Def.task {
   val contents = Seq(
     s"version=${version.value}",
     s"name=${name.value}",
+    s"organization=${organization.value}",
     s"buildTime=${System.currentTimeMillis()}",
     s"frontend.immutable=$immutableJsVersion",
     s"frontend.react=$reactVersion",

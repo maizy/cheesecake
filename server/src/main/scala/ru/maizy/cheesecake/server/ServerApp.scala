@@ -6,13 +6,15 @@ package ru.maizy.cheesecake.server
  */
 
 import java.net.InetAddress
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.io.StdIn
+import scala.concurrent.ExecutionContext
+import scala.util.{ Failure, Success, Try }
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.scalalogging.Logger
+import org.slf4j.LoggerFactory
 import ru.maizy.cheesecake.server.resultsstorage.InMemoryResultStorageActor
 import ru.maizy.cheesecake.server.checker.HttpCheckerActor
 import ru.maizy.cheesecake.server.jsonapi.JsonApi
@@ -22,43 +24,76 @@ import ru.maizy.cheesecake.server.utils.ActorUtils.escapeActorName
 
 
 object ServerApp extends App {
+  val STATUS_BAD_OPTIONS = 2
+  val STATUS_BAD_ADDITIONAL_CONFIG = 3
 
-  startUp()
+  val appLogger = Logger(LoggerFactory.getLogger(s"${BuildInfo.organization}.${BuildInfo.projectName}"))
 
-  // TODO: app life management
-  def startUp(): Unit = {
+  OptionParser.parse(args) match {
+    case None => {
+      appLogger.error("Wrong app options, exiting")
+      System.exit(STATUS_BAD_OPTIONS)
+    }
+    case Some(opts) => startUp(opts)
+  }
+
+  def loadConfig(opts: ServerAppOptions): Try[Config] = {
     val loadedConfig = ConfigFactory.load()
-    val config = ConfigFactory
+    val appConfig = ConfigFactory
       .parseString(
         s"""
           |akka.http.client.user-agent-header = cheesecake/${Version.literal}
           |akka.http.server.server-header = cheesecake/${Version.literal} (akka-http/$${akka.version})
         """.stripMargin
-      ).resolveWith(loadedConfig) withFallback loadedConfig
+      )
+      .resolveWith(loadedConfig)
+      .withFallback(loadedConfig)
 
-    implicit val system: ActorSystem = ActorSystem("cheesecake-server", config)
-    implicit val materializer = ActorMaterializer()
-    implicit val ec = system.dispatcher
+    opts.config match {
+      case None => Success(appConfig)
+      case Some(additionalConfigFile) =>
+        appLogger.info(s"Load additional config from $additionalConfigFile")
+        Try {
+          ConfigFactory.parseFile(additionalConfigFile)
+            .resolveWith(appConfig)
+            .withFallback(appConfig)
+        }
+    }
+  }
 
-    // TODO: args parsing
-    val (host, port) = args.toList match {
-      case p :: Nil => ("localhost", p.toInt)
-      case h :: p :: Nil => (h, p.toInt)
-      case _ => ("localhost", 52022)
+  // TODO: app life management
+  def startUp(opts: ServerAppOptions): Unit = {
+    appLogger.info("Loading configs")
+    loadConfig(opts) match {
+
+      case Failure(e) =>
+        appLogger.error(s"Additional config has some errors: $e")
+        System.exit(STATUS_BAD_ADDITIONAL_CONFIG)
+
+      case Success(config) =>
+        implicit val system: ActorSystem = ActorSystem("cheesecake-server", config)
+        implicit val materializer = ActorMaterializer()
+        implicit val ec = system.dispatcher
+
+        val host = opts.host
+        val port = opts.port
+
+        val initializer = new Initializer(system)
+        initializer.fromConfig(config)
+
+        appLogger.info("Initializing APIs & web UI")
+        val wsApi = new WsApi(system, materializer)
+        val jsonApi = new JsonApi(system, host, port)
+        val webUi = new WebUI(system)
+
+        val route = jsonApi.routes ~ webUi.routes ~ wsApi.routes
+
+        appLogger.info("Launching a HTTP server")
+        Http().bindAndHandle(route, host, port)
+
+        appLogger.info(s"Cheesecake server started at http://$host:$port/")
     }
 
-    val wsApi = new WsApi(system, materializer)
-    val jsonApi = new JsonApi(system, host, port)
-    val webUi = new WebUI(system)
-
-    val route = jsonApi.routes ~ webUi.routes ~ wsApi.routes
-
-    val bindingFuture = Http().bindAndHandle(route, host, port)
-
-    hardcodedApp()
-
-    system.log.info(s"Server online at http://$host:$port/")
-    waitForTerminate(bindingFuture)
   }
 
   // FIXME tmp (will be replaced by generation from config)
@@ -91,15 +126,5 @@ object ServerApp extends App {
 
     serviceActor1 ! AddEndpoints(endpoints1)
     serviceActor2 ! AddEndpoints(endpoints2)
-  }
-
-  // FIXME tmp
-  def waitForTerminate(
-      bindingFuture: Future[Http.ServerBinding])(implicit system: ActorSystem, ec: ExecutionContext): Unit = {
-
-    StdIn.readLine()
-    bindingFuture
-      .flatMap(_.unbind())
-      .onComplete(_ => system.terminate())
   }
 }
