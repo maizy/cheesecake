@@ -8,7 +8,7 @@ package ru.maizy.cheesecake.server.marshallers
 import ru.maizy.cheesecake.server.jsonapi.models.FullView
 import ru.maizy.cheesecake.server.resultsstorage.{ Aggregate, AggregateResult }
 import ru.maizy.cheesecake.server.service.EndpointFQN
-import spray.json.{ JsArray, JsNumber, JsObject, JsString, JsValue, RootJsonFormat, pimpAny }
+import spray.json.{ JsArray, JsNumber, JsObject, JsValue, RootJsonFormat, pimpAny }
 
 // TODO: how to use only writer for case classes
 trait FullViewJsonMarshallers

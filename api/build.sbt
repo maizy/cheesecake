@@ -1,17 +1,4 @@
 name := "cheesecake-api"
-organization := "ru.maizy"
-version := "0.0.1"
-scalaVersion := "2.11.7"
-
-scalacOptions ++= Seq(
-  "-target:jvm-1.8",
-  "-encoding", "UTF-8",
-  "-deprecation",
-  "-unchecked",
-  "-explaintypes",
-  "-Xfatal-warnings",
-  "-Xlint"
-)
 
 
 // Scalastyle setup

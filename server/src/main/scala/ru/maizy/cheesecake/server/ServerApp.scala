@@ -6,21 +6,15 @@ package ru.maizy.cheesecake.server
  */
 
 import java.net.InetAddress
-import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.io.StdIn
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
-import akka.pattern.ask
 import akka.stream.ActorMaterializer
-import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
-import ru.maizy.cheesecake.server.resultsstorage.{ Aggregate, AggregateType, AggregatedResults, AllEndpoints }
-import ru.maizy.cheesecake.server.resultsstorage.{ EndpointCheckResults, GetAggregatedResults, GetAllEndpoints }
-import ru.maizy.cheesecake.server.resultsstorage.{ GetEndpointCheckResults, InMemoryResultStorageActor }
-import ru.maizy.cheesecake.server.resultsstorage.{ LastResultAggregate, SimpleAggregate }
-import ru.maizy.cheesecake.server.checker.{ CheckStatus, HttpCheckerActor }
+import ru.maizy.cheesecake.server.resultsstorage.InMemoryResultStorageActor
+import ru.maizy.cheesecake.server.checker.HttpCheckerActor
 import ru.maizy.cheesecake.server.jsonapi.JsonApi
 import ru.maizy.cheesecake.server.service.{ AddEndpoints, Endpoint, HttpEndpoint, Service, ServiceActor }
 import ru.maizy.cheesecake.server.service.{ IpAddress, SymbolicAddress }
@@ -69,8 +63,6 @@ object ServerApp extends App {
 
   // FIXME tmp (will be replaced by generation from config)
   def hardcodedApp()(implicit system: ActorSystem, ec: ExecutionContext, mat: ActorMaterializer): Unit = {
-    implicit val timeout = Timeout(30.seconds)
-
     val storage = system.actorOf(InMemoryResultStorageActor.props(), "storage")
 
     val endpoint1 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/status")

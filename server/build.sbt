@@ -1,11 +1,8 @@
 enablePlugins(JavaServerAppPackaging, SbtWeb)
 
 name := "cheesecake-server"
-organization := "ru.maizy"
-version := "0.0.1"
-scalaVersion := "2.11.7"
 
-val akkaVersion = "2.4.2"
+val akkaVersion = "2.4.4"
 val akkaStreamsVersion = akkaVersion
 
 val immutableJsVersion = "3.8.1"
@@ -25,17 +22,6 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-spray-json-experimental" % akkaStreamsVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
   "org.scalatest" %% "scalatest" % "2.2.6" % "test"
-)
-
-scalacOptions ++= Seq(
-  "-target:jvm-1.8",
-  "-encoding", "UTF-8",
-  "-deprecation",
-  "-feature",
-  "-unchecked",
-  "-explaintypes",
-  "-Xfatal-warnings",
-  "-Xlint"
 )
 
 

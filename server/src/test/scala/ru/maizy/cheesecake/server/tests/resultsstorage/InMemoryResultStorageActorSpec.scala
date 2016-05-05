@@ -59,7 +59,7 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
     def checkResult(shift: Int, status: CheckStatus.Type): HttpCheckResult =
       HttpCheckResult(
         status,
-        baseTime.plus(Duration.of(shift, ChronoUnit.MILLIS))
+        baseTime.plus(Duration.of(shift.toLong, ChronoUnit.MILLIS))
       )
   }
 
@@ -67,7 +67,6 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
     val syncRef = TestActorRef[InMemoryResultStorageActor](InMemoryResultStorageActor.props())
 
     def getResults(endpointFqn: EndpointFQN): Option[InMemoryResultStorageActor#ResultData] = {
-      import scala.language.existentials
       syncRef.underlyingActor.results.get(endpointFqn)
     }
 
