@@ -5,29 +5,50 @@ lazy val commonSettings = Seq(
   version := "0.0.2",
   scalaVersion := "2.11.8",
   scalacOptions ++= Seq(
-      "-target:jvm-1.8",
-      "-encoding", "UTF-8",
-      "-deprecation",
-      "-unchecked",
-      "-explaintypes",
-      "-Xfatal-warnings",
-      "-Xlint:_",
-      "-Ywarn-dead-code",
-      "-Ywarn-inaccessible",
-      "-Ywarn-infer-any",
-      "-Ywarn-nullary-override",
-      "-Ywarn-nullary-unit",
-      "-Ywarn-numeric-widen",
-      "-Ywarn-unused",
-      "-Ywarn-unused-import"
+    "-target:jvm-1.8",
+    "-encoding", "UTF-8",
+    "-deprecation",
+    "-unchecked",
+    "-explaintypes",
+    "-Xfatal-warnings",
+    "-Xlint:_",
+    "-Ywarn-dead-code",
+    "-Ywarn-inaccessible",
+    "-Ywarn-infer-any",
+    "-Ywarn-nullary-override",
+    "-Ywarn-nullary-unit",
+    "-Ywarn-numeric-widen",
+    "-Ywarn-unused",
+    "-Ywarn-unused-import"
   )
 )
 
-lazy val api = project.
-    in(file("api")).
-    settings(commonSettings: _*)
+lazy val commonDependencies = Seq(
+  libraryDependencies ++= Seq(
+    "com.typesafe" % "config" % "1.3.0",
+    "org.scalatest" %% "scalatest" % "2.2.6" % "test"
+  )
+)
 
-lazy val server = project.
-    in(file("server")).
-    settings(commonSettings: _*).
-    dependsOn(api)
+lazy val core = project
+  .in(file("core"))
+  .settings(commonDependencies: _*)
+  .settings(commonSettings: _*)
+
+lazy val api = project
+  .in(file("api"))
+  .settings(commonSettings: _*)
+
+lazy val client = project
+  .in(file("client"))
+  .settings(commonDependencies: _*)
+  .settings(commonSettings: _*)
+  .dependsOn(core)
+  .dependsOn(api)
+
+lazy val server = project
+  .in(file("server"))
+  .settings(commonDependencies: _*)
+  .settings(commonSettings: _*)
+  .dependsOn(core)
+  .dependsOn(api)
