@@ -6,14 +6,15 @@ package ru.maizy.cheesecake.server.checker
  */
 
 import java.time.ZonedDateTime
-import scala.concurrent.duration._
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.Future
-import akka.actor.{ Props, ActorRef, ActorLogging, Actor }
+import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
 import akka.http.scaladsl.settings.ClientConnectionSettings
-import akka.http.scaladsl.model.{ HttpResponse, HttpRequest, StatusCodes }
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.{ HttpHeader, HttpRequest, HttpResponse, StatusCodes }
+import akka.http.scaladsl.model.headers.RawHeader
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{ Sink, Source, Flow }
+import akka.stream.scaladsl.{ Flow, Sink, Source }
 import akka.pattern.pipe
 import com.typesafe.config.{ Config, ConfigFactory }
 import ru.maizy.cheesecake.core.utils.CollectionsUtils
@@ -50,8 +51,14 @@ class HttpCheckerActor(val materializer: ActorMaterializer) extends Actor with A
 
   def check(endpoint: HttpEndpoint, sender: ActorRef, includeResponse: Boolean = false): Unit = {
     log.info(s"check http endpoint: $endpoint" + (if (includeResponse) " with response" else ""))
+    val headers: Seq[HttpHeader] = for (
+      headersMap <- endpoint.headers.toSeq;
+      (key, values) <- headersMap;
+      value <- values
+    ) yield RawHeader(key, value)
+
     val checkResult: Future[HttpCheckResult] =
-      Source.single(HttpRequest(uri = endpoint.path))
+      Source.single(HttpRequest(uri = endpoint.path, headers = headers.toVector))
         .via(buildFlow(endpoint))
         .runWith(Sink.head)
         .flatMap(checkResponse(_, includeResponse))
