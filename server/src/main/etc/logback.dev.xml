@@ -4,17 +4,17 @@
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <target>System.out</target>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %.-1level [%logger{5} %X{akkaSource}]: %msg%n</pattern>
+            <pattern>%gray(%d{HH:mm:ss.SSS}) %highlight(%.-1level) [%cyan(%logger{5}) %green(%X{akkaSource})]: %msg%n</pattern>
         </encoder>
     </appender>
 
     <logger name="akka" level="INFO"/>
-    <logger name="ru.maizy.cheesecake" level="INFO"/>
+    <logger name="ru.maizy.cheesecake" level="DEBUG"/>
 
     <!-- suppress some verbose loggers -->
     <logger name="akka.serialization" level="INFO" />
 
-    <root level="INFO">
+    <root level="DEBUG">
         <appender-ref ref="CONSOLE"/>
     </root>
 

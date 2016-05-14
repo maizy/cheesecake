@@ -15,7 +15,7 @@ _TBA_
 Dev requirements: node 4.1+, npm 2.5+.
 
 Run server in dev mode
-`sbt -DassetsMode=dev server/run`
+`sbt -DassetsMode=dev -Dlogback.configurationFile=server/src/main/etc/logback.dev.xml server/run`
 
 Compile assets:
 `sbt server/compile:assets`
