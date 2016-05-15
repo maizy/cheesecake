@@ -5,4 +5,4 @@ package ru.maizy.cheesecake.api
  * See LICENSE.txt for details.
  */
 
-case class Stub(val name: String)  // FIXME: tmp
+case class Stub(stub: String)  // FIXME: tmp

@@ -5,101 +5,97 @@ package ru.maizy.cheesecake.server
  * See LICENSE.txt for details.
  */
 
-import java.net.InetAddress
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.io.StdIn
+import scala.util.{ Failure, Success, Try }
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
-import com.typesafe.config.ConfigFactory
-import ru.maizy.cheesecake.server.resultsstorage.InMemoryResultStorageActor
-import ru.maizy.cheesecake.server.checker.HttpCheckerActor
+import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.scalalogging.Logger
+import org.slf4j.LoggerFactory
 import ru.maizy.cheesecake.server.jsonapi.JsonApi
-import ru.maizy.cheesecake.server.service.{ AddEndpoints, Endpoint, HttpEndpoint, Service, ServiceActor }
-import ru.maizy.cheesecake.server.service.{ IpAddress, SymbolicAddress }
-import ru.maizy.cheesecake.server.utils.ActorUtils.escapeActorName
-
 
 object ServerApp extends App {
+  val STATUS_BAD_OPTIONS = 2
+  val STATUS_BAD_CONFIG = 3
+  val STATUS_UNABLE_TO_BIND = 10
 
-  startUp()
+  val appLogger = Logger(LoggerFactory.getLogger(s"${BuildInfo.organization}.${BuildInfo.projectName}"))
 
-  // TODO: app life management
-  def startUp(): Unit = {
+  OptionParser.parse(args) match {
+    case None =>
+      appLogger.error("Wrong app options, exiting")
+      System.exit(STATUS_BAD_OPTIONS)
+    case Some(opts) => startUp(opts)
+  }
+
+  def loadConfig(opts: ServerAppOptions): Try[Config] = {
     val loadedConfig = ConfigFactory.load()
-    val config = ConfigFactory
+    val appConfig = ConfigFactory
       .parseString(
         s"""
           |akka.http.client.user-agent-header = cheesecake/${Version.literal}
           |akka.http.server.server-header = cheesecake/${Version.literal} (akka-http/$${akka.version})
         """.stripMargin
-      ).resolveWith(loadedConfig) withFallback loadedConfig
+      )
+      .resolveWith(loadedConfig)
+      .withFallback(loadedConfig)
 
-    implicit val system: ActorSystem = ActorSystem("cheesecake-server", config)
-    implicit val materializer = ActorMaterializer()
-    implicit val ec = system.dispatcher
-
-    // TODO: args parsing
-    val (host, port) = args.toList match {
-      case p :: Nil => ("localhost", p.toInt)
-      case h :: p :: Nil => (h, p.toInt)
-      case _ => ("localhost", 52022)
+    opts.config match {
+      case None => Success(appConfig)
+      case Some(additionalConfigFile) =>
+        appLogger.info(s"Load additional config from $additionalConfigFile")
+        Try {
+          ConfigFactory.parseFile(additionalConfigFile)
+            .resolveWith(appConfig)
+            .withFallback(appConfig)
+        }
     }
-
-    val wsApi = new WsApi(system, materializer)
-    val jsonApi = new JsonApi(system, host, port)
-    val webUi = new WebUI(system)
-
-    val route = jsonApi.routes ~ webUi.routes ~ wsApi.routes
-
-    val bindingFuture = Http().bindAndHandle(route, host, port)
-
-    hardcodedApp()
-
-    system.log.info(s"Server online at http://$host:$port/")
-    waitForTerminate(bindingFuture)
   }
 
-  // FIXME tmp (will be replaced by generation from config)
-  def hardcodedApp()(implicit system: ActorSystem, ec: ExecutionContext, mat: ActorMaterializer): Unit = {
-    val storage = system.actorOf(InMemoryResultStorageActor.props(), "storage")
+  // TODO: app life management
+  def startUp(opts: ServerAppOptions): Unit = {
+    appLogger.info("Loading configs")
+    loadConfig(opts) match {
 
-    val endpoint1 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/status")
-    val endpoint2 = HttpEndpoint(SymbolicAddress("localhost"), 80, "/")
-    val endpoint3 = HttpEndpoint(
-      IpAddress(InetAddress.getByAddress(Array(127, 0, 0, 1).map(_.toByte))), 80, "/not_found")
-    val endpoint4 = HttpEndpoint(SymbolicAddress("non.exists"), 80, "/")
+      case Failure(e) =>
+        appLogger.error(s"Unable to load configs: $e")
+        System.exit(STATUS_BAD_CONFIG)
 
-    val service1 = Service("nginx")
-    val service2 = Service("my_backend")
+      case Success(config) =>
+        implicit val system = ActorSystem("cheesecake-server", config)
+        implicit val materializer = ActorMaterializer()
+        implicit val ec = system.dispatcher
 
-    val endpoints1: Set[Endpoint] = Set(endpoint1, endpoint2, endpoint3)
-    val endpoints2: Set[Endpoint] = Set(endpoint4)
+        appLogger.debug(s"start with settings: ${system.settings.toString}")
 
-    val httpChecker = system.actorOf(HttpCheckerActor.props(mat), name = "http-checker-1")
+        val host = opts.host
+        val port = opts.port
 
-    val serviceActor1 = system.actorOf(
-      ServiceActor.props(service1, storage, httpChecker, mat),
-      name = escapeActorName(s"service-${service1.name}")
-    )
+        val initializer = new Initializer(system)
 
-    val serviceActor2 = system.actorOf(
-      ServiceActor.props(service2, storage, httpChecker, mat),
-      name = escapeActorName(s"service-${service2.name}")
-    )
+        appLogger.info("Initializing APIs & web UI")
+        val wsApi = new WsApi(system, materializer)
+        val jsonApi = new JsonApi(system, host, port)
+        val webUi = new WebUI(system)
 
-    serviceActor1 ! AddEndpoints(endpoints1)
-    serviceActor2 ! AddEndpoints(endpoints2)
-  }
+        val routes = jsonApi.routes ~ webUi.routes ~ wsApi.routes
 
-  // FIXME tmp
-  def waitForTerminate(
-      bindingFuture: Future[Http.ServerBinding])(implicit system: ActorSystem, ec: ExecutionContext): Unit = {
+        appLogger.info(s"Launching a HTTP server at http://$host:$port/")
+        val bindFuture = Http().bindAndHandle(routes, host, port)
 
-    StdIn.readLine()
-    bindingFuture
-      .flatMap(_.unbind())
-      .onComplete(_ => system.terminate())
+        bindFuture.onFailure {
+          case e: Throwable =>
+            appLogger.error(s"Unable to bind HTTP server: $e")
+            System.exit(STATUS_UNABLE_TO_BIND)
+        }
+
+        bindFuture.foreach { serverBinding =>
+          appLogger.info("Cheesecake HTTP server started")
+
+          appLogger.info("Initializing checking services & endpoints")
+          initializer.fromConfig(config)
+        }
+    }
   }
 }
