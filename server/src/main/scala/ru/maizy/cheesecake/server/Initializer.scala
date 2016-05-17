@@ -15,8 +15,18 @@ import ru.maizy.cheesecake.server.resultsstorage.InMemoryResultStorageActor
 import ru.maizy.cheesecake.server.service.{ AddEndpoints, Endpoint, HttpAddress, HttpEndpoint, IpAddress, Service }
 import ru.maizy.cheesecake.server.service.{ ServiceActor, SymbolicAddress }
 import ru.maizy.cheesecake.server.utils.ActorUtils.escapeActorName
-import ru.maizy.cheesecake.core.RichTypesafeConfig.{ ConfigError, ConfigListImplicits, IntImplicits, MissingValue }
-import ru.maizy.cheesecake.core.RichTypesafeConfig.{ ObjectImplicits, StringImplicits, WarnMessages }
+import ru.maizy.cheesecake.core.RichTypesafeConfig.{ ConfigListImplicits, IntImplicits }
+import ru.maizy.cheesecake.core.RichTypesafeConfig.{ ObjectImplicits, StringImplicits }
+import ru.maizy.cheesecake.core.WarnMessages
+import ru.maizy.cheesecake.server.bodyparser.{ BodyParserSpec, JsonParserSpec, RegexpParserSpec }
+import ru.maizy.cheesecake.server.bodyparser.{ TextParserSpec, XmlParserSpec }
+
+case class ExtractResult[+T](warnings: WarnMessages, result: Option[T])
+
+object ExtractResult {
+  def singleError[T](message: String): ExtractResult[T] = ExtractResult[T](Seq(message), None)
+  def successWithoutWarnings[T](result: T): ExtractResult[T] = ExtractResult(Seq.empty, Some(result))
+}
 
 class Initializer (private val system: ActorSystem) extends LazyLogging {
 
@@ -47,70 +57,119 @@ class Initializer (private val system: ActorSystem) extends LazyLogging {
     )
   }
 
-  private def extractAddress(addressConfig: Config): Either[String, HttpAddress] = {
+  private def extractService(serviceConfig: Config): ExtractResult[Service] = {
+    val eitherName = serviceConfig.eitherString("name")
+    val maybeService = eitherName
+      .right.map(Service(_))
+      .right.toOption
+    val warnings = eitherName.left.toSeq.map("`name` field warning: " + _.errorMessage)
+    ExtractResult(warnings, maybeService)
+  }
+
+  private def extractAddress(addressConfig: Config): ExtractResult[HttpAddress] = {
     val maybeIp = addressConfig.optString("ip")
     val maybeHost = addressConfig.optString("host")
-    (maybeIp, maybeHost) match {
-      case (Some(ip), None) => Right(IpAddress(InetAddress.getByName(ip)))  // TODO: check ip format
-      case (None, Some(host)) => Right(SymbolicAddress(host))  // TODO: check hostname validity
-      case (None, None) => Right(IpAddress(InetAddress.getLocalHost))
-      case _ => Left("Both ip & host defined")
+    var warnings: WarnMessages = Seq.empty
+    val maybeAddress = (maybeIp, maybeHost) match {
+      case (Some(ip), None) => Some(IpAddress(InetAddress.getByName(ip)))  // TODO: check ip format
+      case (None, Some(host)) => Some(SymbolicAddress(host))  // TODO: check hostname validity
+      case (None, None) => Some(IpAddress(InetAddress.getLocalHost))
+      case _ =>
+        warnings = warnings :+ "Both ip & host defined, skipping"
+        None
+    }
+    ExtractResult(warnings, maybeAddress)
+  }
+
+  private def extractBodyParserSpec(parserConfig: Config): ExtractResult[BodyParserSpec] = {
+    parserConfig.optString("type") match {
+      case Some("text") => ExtractResult.successWithoutWarnings(TextParserSpec)
+      case Some("regexp") => RegexpParserSpec.fromConfig(parserConfig)
+      case Some("json") => JsonParserSpec.fromConfig(parserConfig)
+      case Some("xml") => XmlParserSpec.fromConfig(parserConfig)
+      case Some(unknownType) => ExtractResult.singleError(s"Unknown body parser type $unknownType")
+      case _ => ExtractResult.singleError("Body parser type not specified")
     }
   }
 
-  private def extractEndpoint(service: Service, endpointConfig: Config): (Either[String, Endpoint], WarnMessages) = {
+  private def extractBodyParsers(endpointConfig: Config): ExtractResult[Map[String, BodyParserSpec]] = {
+    val parsersConfigsRes = endpointConfig.eitherConfigObjectMapWithWarnings("body_parsers")
+
+    var warnings = parsersConfigsRes.warnings.map("Body parsers warning: " + _)
+    var parsers: Map[String, BodyParserSpec] = Map.empty
+    for (
+      parsersMap <- parsersConfigsRes.result.right.toSeq;
+      (key, parserConfigObject) <- parsersMap
+    ) {
+      val ExtractResult(parserWarnings, maybeParser) = extractBodyParserSpec(parserConfigObject.toConfig)
+      warnings ++= parserWarnings.map(s"Body parser `$key` warning: " + _)
+      maybeParser foreach { parser => parsers += (key -> parser) }
+    }
+    ExtractResult(warnings, Some(parsers).filterNot(_.isEmpty))
+  }
+
+  private def extractHeaders(endpointConfig: Config): ExtractResult[Headers] = {
+    val headersResult = endpointConfig.eitherStringMapWithWarnings("headers")
+    val maybeHeaders = headersResult.result.right.toOption.map(_.mapValues(Seq(_)))
+    ExtractResult(headersResult.warnings, maybeHeaders)
+  }
+
+  private def extractEndpoint(endpointConfig: Config): ExtractResult[Endpoint] = {
     val endpointType = endpointConfig.optString("type").getOrElse("http")
     endpointType match {
       case "http" =>
         val port = endpointConfig.optInt("port").getOrElse(80)
         val path = endpointConfig.optString("path").getOrElse("/")
-        val headersRes = endpointConfig.eitherStringMapWithWarnings("headers")
-        val headers = headersRes.result.right.toOption.map(_.mapValues(Seq(_)))
-        val warnings: Seq[String] = headersRes.result match {
-          case Left(e: MissingValue) => Seq.empty
-          case Left(e: ConfigError) => Seq("Headers warning: " + e.errorMessage)
-          case _ => Seq.empty
+
+        var warnings: WarnMessages = Seq.empty
+
+        val ExtractResult(headersWarnings, maybeHeaders) = extractHeaders(endpointConfig)
+        warnings ++= headersWarnings.map("Headers warning: " + _)
+
+        val ExtractResult(bodyParsersWarnings, maybeParsers) = extractBodyParsers(endpointConfig)
+        warnings ++= bodyParsersWarnings.map("Parsers warning: " + _)
+
+        val ExtractResult(addressWarnings, maybeAddress) = extractAddress(endpointConfig)
+        warnings ++= addressWarnings.map("Address warning: " + _)
+
+        val maybeEndpoint: Option[Endpoint] = maybeAddress match {
+          case Some(address) =>
+            Some(HttpEndpoint(address, port, path, maybeHeaders, maybeParsers))
+          case None =>
+            warnings = warnings :+ "Unable to detect address, skipping"
+            None
         }
-        val eitherEndpoint = extractAddress(endpointConfig)
-          .left.map("Bad address for endpoint: " + _)
-          .right.map(HttpEndpoint(_, port, path, headers))
-        (eitherEndpoint, headersRes.warnings.map("Headers warning: " + _) ++ warnings)
-      case other: String => (Left(s"Unsupported endpoint type `$other`"), Seq.empty)
+
+        ExtractResult(warnings, maybeEndpoint)
+      case other: String =>
+        ExtractResult.singleError(s"Unsupported endpoint type `$other`")
     }
   }
 
-  private def extractEndpoints(service: Service, serviceConfig: Config): (Set[Endpoint], WarnMessages) = {
+  private def extractEndpoints(serviceConfig: Config): ExtractResult[Set[Endpoint]] = {
     val eitherEndpoints = serviceConfig.eitherConfigList("endpoints", allowEmpty = true)
-    var warnMessages = Seq.empty[String]
-    warnMessages ++= eitherEndpoints.left.toSeq.map { error =>
-      s"Error on looking for endpoints for service ${service.name}: $error"
+    var warnings: WarnMessages = Seq.empty[String]
+    warnings ++= eitherEndpoints.left.toSeq.map { error =>
+      s"Error on looking for endpoints: $error"
     }
 
-    def checkEndpoint(res: Either[String, Endpoint], index: Int): Option[Endpoint] = {
-      res.left.foreach { error => logger.warn(s"Error in endpoint #$index for service ${service.name}: $error") }
-      res.right.toOption
-    }
-
-    val endpoints = for (
+    var endpoints: Set[Endpoint] = Set.empty
+    for (
       endpointsConfigs <- eitherEndpoints.right.toSeq;
-      (endpointConfig, index) <- endpointsConfigs.zipWithIndex;
-      eitherEndpoint = {
-        val (eitherEndpoint, warnings) = extractEndpoint(service, endpointConfig)
-        warnMessages ++= warnings.map { w =>
-          s"Warning in endpoint #$index for service ${service.name}: $w"
-        }
-        eitherEndpoint
-      };
-      endpoint <- checkEndpoint(eitherEndpoint, index)
-    ) yield endpoint
+      (endpointConfig, index) <- endpointsConfigs.zipWithIndex
+    ) {
+      val ExtractResult(endpointWarnings, maybeEndpoint) = extractEndpoint(endpointConfig)
+      warnings ++= endpointWarnings.map { w =>
+        s"Warning in endpoint #$index: $w"
+      }
+      maybeEndpoint match {
+        case None => warnings = warnings :+ s"Unable to initialize endpoint #$index"
+        case Some(endpoint) => endpoints = endpoints + endpoint
+      }
+    }
 
-    (endpoints.toSet, warnMessages)
+    ExtractResult(warnings, Some(endpoints).filterNot(_.isEmpty))
   }
-
-  private def extractService(serviceConfig: Config): Either[String, Service] =
-    serviceConfig.eitherString("name")
-      .right.map(Service(_))
-      .left.map(_.errorMessage)
 
   def fromConfig(config: Config)(implicit materializer: ActorMaterializer): Unit = {
     val storageRef = buildStorage()
@@ -122,15 +181,19 @@ class Initializer (private val system: ActorSystem) extends LazyLogging {
       services <- services.right;
       (serviceConfig, index) <- services.zipWithIndex
     ) {
-      val eitherService = extractService(serviceConfig)
-      eitherService.left.foreach { error => logger.warn(s"Skip service #$index because of error: $error") }
-      eitherService.right.foreach { service =>
-        val (endpoints, warnings) = extractEndpoints(service, serviceConfig)
-        warnings.foreach { w => logger.warn(w) }
-        val serviceActor = buildServiceActor(service, storageRef, httpChecker)
-        if (endpoints.nonEmpty) {
-          serviceActor ! AddEndpoints(endpoints)
-        }
+      val ExtractResult(serviceWarnings, maybeService) = extractService(serviceConfig)
+      serviceWarnings.foreach { error => logger.warn(s"Warning for service #$index: $error") }
+      maybeService match {
+        case None => logger.warn(s"Unable to initialize service #$index, skipping")
+        case Some(service) =>
+          val ExtractResult(warnings, maybeEndpoints) = extractEndpoints(serviceConfig)
+          warnings.foreach { w => logger.warn(s"Warning for endpoints in service #$index: $w") }
+          maybeEndpoints match {
+            case None => logger.warn(s"No endpoints in service #$index, skipping")
+            case Some(endpoints) =>
+            val serviceActor = buildServiceActor(service, storageRef, httpChecker)
+            serviceActor ! AddEndpoints(endpoints)
+          }
       }
     }
   }

@@ -1,14 +1,14 @@
 package ru.maizy.cheesecake.server.marshallers
 
-import spray.json.{ JsObject, JsString, JsValue, RootJsonFormat }
-import spray.json.{ JsNumber, pimpAny }
-import ru.maizy.cheesecake.server.service.{ Endpoint, EndpointFQN, HttpAddress, HttpEndpoint, IpAddress, Service }
-import ru.maizy.cheesecake.server.service.SymbolicAddress
-
 /**
  * Copyright (c) Nikita Kovaliov, maizy.ru, 2016
  * See LICENSE.txt for details.
  */
+
+import ru.maizy.cheesecake.core.utils.StringUtils
+import spray.json.{ JsNumber, JsObject, JsString, JsValue, RootJsonFormat, pimpAny }
+import ru.maizy.cheesecake.server.service.{ Endpoint, EndpointFQN, HttpAddress, HttpEndpoint, IpAddress, Service }
+import ru.maizy.cheesecake.server.service.SymbolicAddress
 
 // TODO: how to use only writer for case classes
 trait ServiceJsonMarshallers extends JsonMarshaller {
@@ -46,7 +46,15 @@ trait ServiceJsonMarshallers extends JsonMarshaller {
         "address" -> endpoint.address.toJson,
         "port" -> JsNumber(endpoint.port),
         "path" -> JsString(endpoint.path),
-        "headers" -> endpoint.headers.toJson
+        "headers" -> endpoint.headers.toJson,
+        "parsers" -> JsObject(endpoint
+          .bodyParsers
+          .getOrElse(Map.empty)
+          .mapValues(spec => JsObject(
+            // FIXME: tmp (add parser formatter with all types support)
+            "type" -> JsString(StringUtils.upperCaseToDashes(spec.parserType.toString)))
+          )
+        )
       )
     override def read(json: JsValue): HttpEndpoint = ???
   }
@@ -61,8 +69,6 @@ trait ServiceJsonMarshallers extends JsonMarshaller {
 
     override def read(json: JsValue): Endpoint = ???
   }
-
-  implicit val httpEndpointFormat = jsonFormat4(HttpEndpoint)
 
   implicit val endpointFQN = jsonFormat2(EndpointFQN)
 }
