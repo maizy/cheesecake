@@ -5,13 +5,12 @@ package ru.maizy.cheesecake.server.marshallers
  * See LICENSE.txt for details.
  */
 
-import ru.maizy.cheesecake.core.utils.StringUtils
 import spray.json.{ JsNumber, JsObject, JsString, JsValue, RootJsonFormat, pimpAny }
 import ru.maizy.cheesecake.server.service.{ Endpoint, EndpointFQN, HttpAddress, HttpEndpoint, IpAddress, Service }
 import ru.maizy.cheesecake.server.service.SymbolicAddress
 
 // TODO: how to use only writer for case classes
-trait ServiceJsonMarshallers extends JsonMarshaller {
+trait ServiceJsonMarshallers extends BodyParseSpecMarshallers with JsonMarshaller {
   implicit val serviceFormat = jsonFormat1(Service)
 
   implicit object IpAddressFormat extends RootJsonFormat[IpAddress] {
@@ -50,10 +49,7 @@ trait ServiceJsonMarshallers extends JsonMarshaller {
         "parsers" -> JsObject(endpoint
           .bodyParsers
           .getOrElse(Map.empty)
-          .mapValues(spec => JsObject(
-            // FIXME: tmp (add parser formatter with all types support)
-            "type" -> JsString(StringUtils.upperCaseToDashes(spec.parserType.toString)))
-          )
+          .mapValues(spec => spec.toJson)
         )
       )
     override def read(json: JsValue): HttpEndpoint = ???

@@ -6,6 +6,7 @@ package ru.maizy.cheesecake.server.checker
  */
 
 import java.time.ZonedDateTime
+import ru.maizy.cheesecake.server.ExtraInfo
 import ru.maizy.cheesecake.server.service.Endpoint
 
 object CheckStatus extends Enumeration {
@@ -21,4 +22,5 @@ case class Check(endpoint: Endpoint) extends AbstractCheck(endpoint)
 trait CheckResult {
   def status: CheckStatus.Type
   def checkTime: ZonedDateTime
+  def extraInfo: Option[ExtraInfo]
 }

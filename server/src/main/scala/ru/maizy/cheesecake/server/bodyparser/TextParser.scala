@@ -5,10 +5,10 @@ package ru.maizy.cheesecake.server.bodyparser
  * See LICENSE.txt for details.
  */
 
-import akka.http.scaladsl.model.HttpHeader
+import akka.util.ByteString
 
 class TextParser extends BodyParser {
   override type Spec = TextParserSpec.type
-  // FIXME
-  override def parse(spec: Spec, body: Seq[Char], headers: Seq[HttpHeader]): String = ???
+  override def parse(spec: Spec, body: ByteString): Option[String] =
+    Some(body.utf8String)
 }

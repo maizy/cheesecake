@@ -5,12 +5,26 @@ package ru.maizy.cheesecake.server.bodyparser
  * See LICENSE.txt for details.
  */
 
-import akka.http.scaladsl.model.HttpHeader
+import scala.util.Try
+import akka.util.ByteString
+import spray.json._  // TODO: explicit imports here and bellow
+import DefaultJsonProtocol._
+import spray.json.{ JsonParser => SprayJsonParser }
 
-case class JsonPath(path: String)  // TODO: replase with some type from the json lenses lib ?
-
-class JsonBodyParser extends BodyParser {
+class JsonParser extends BodyParser {
   override type Spec = JsonParserSpec
-  // FIXME
-  override def parse(spec: Spec, body: Seq[Char], headers: Seq[HttpHeader]): String = ???
+  override def parse(spec: Spec, body: ByteString): Option[String] = {
+    Try(SprayJsonParser(ParserInput.apply(body.toArray)))
+      .toOption
+      .flatMap { parsed =>
+        spec.path.lense.tryGet[JsValue](parsed) match {
+          case Left(_) => None
+          case Right(results) => results.headOption
+            .collect {
+              case str: JsString => str.value
+              case number: JsNumber => number.toString
+            }
+        }
+      }
+  }
 }

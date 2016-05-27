@@ -5,9 +5,9 @@ package ru.maizy.cheesecake.server.bodyparser
  * See LICENSE.txt for details.
  */
 
-import akka.http.scaladsl.model.HttpHeader
+import akka.util.ByteString
 
 trait BodyParser {
   type Spec <: BodyParserSpec
-  def parse(spec: Spec, body: Seq[Char], headers: Seq[HttpHeader]): String
+  def parse(spec: Spec, body: ByteString): Option[String]
 }

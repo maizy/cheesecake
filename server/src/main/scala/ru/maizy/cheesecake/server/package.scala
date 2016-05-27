@@ -9,6 +9,7 @@ import scala.util.Random
 package object server {
 
   type Headers = Map[String, Seq[String]]
+  type ExtraInfo = Map[String, String]
 
   val random = new Random
 }

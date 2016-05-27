@@ -7,7 +7,7 @@ package ru.maizy.cheesecake.server.marshallers
 
 import ru.maizy.cheesecake.core.utils.StringUtils.upperCaseToDashes
 import ru.maizy.cheesecake.server.resultsstorage.{ AggregateResult, DurationResult, IntResult, OptionalDateTimeResult }
-import ru.maizy.cheesecake.server.resultsstorage.OptionalStatusResult
+import ru.maizy.cheesecake.server.resultsstorage.{ OptionalExtraInfoResult, OptionalStatusResult }
 import spray.json.{ JsNull, JsNumber, JsObject, JsString, JsValue, RootJsonFormat, pimpAny }
 
 trait AggregateResultJsonMarshallers
@@ -42,6 +42,12 @@ trait AggregateResultJsonMarshallers
       case optStatusRes: OptionalStatusResult =>
         optStatusRes.result match {
           case Some(statusType) => JsString(upperCaseToDashes(statusType.toString))
+          case None => JsNull
+        }
+
+      case optExtraInfoRes: OptionalExtraInfoResult =>
+        optExtraInfoRes.result match {
+          case Some(extraInfo) => JsObject(extraInfo.mapValues(JsString(_)))
           case None => JsNull
         }
     }

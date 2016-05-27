@@ -8,14 +8,12 @@ package ru.maizy.cheesecake.server.tests
 import akka.actor.ActorSystem
 import akka.testkit.{ ImplicitSender, TestKit }
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{ Matchers, Suite }
 
 
 abstract class ActorSystemBaseSpec(system: ActorSystem)
   extends TestKit(system)
-  with Suite
+  with BaseSpec
   with ImplicitSender
-  with Matchers
   with KillActorSystemAfterAllTests
 {
 

@@ -73,7 +73,7 @@ class Initializer (private val system: ActorSystem) extends LazyLogging {
     val maybeAddress = (maybeIp, maybeHost) match {
       case (Some(ip), None) => Some(IpAddress(InetAddress.getByName(ip)))  // TODO: check ip format
       case (None, Some(host)) => Some(SymbolicAddress(host))  // TODO: check hostname validity
-      case (None, None) => Some(IpAddress(InetAddress.getLocalHost))
+      case (None, None) => Some(SymbolicAddress("localhost"))
       case _ =>
         warnings = warnings :+ "Both ip & host defined, skipping"
         None
