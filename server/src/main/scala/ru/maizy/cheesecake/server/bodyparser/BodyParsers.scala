@@ -18,6 +18,12 @@ object BodyParsers {
         case TextParserSpec =>
           (new TextParser).parse(TextParserSpec, body)
 
+        case spec: RegexpParserSpec =>
+          (new RegexpParser).parse(spec, body)
+
+        case spec: XmlParserSpec =>
+          (new XmlParser).parse(spec, body)
+
         case _ =>
           // TODO: warning
           None

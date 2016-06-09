@@ -32,7 +32,7 @@ case object RegexpParserSpec {
             ExtractResult.singleError(s"Wrong regexp pattern '$rawPattern': $e")
 
           case Failure(e: Throwable) =>
-            ExtractResult.singleError(s"Unknown error in patter '$rawPattern' compiling: $e")
+            ExtractResult.singleError(s"Unknown error in pattern '$rawPattern' compiling: $e")
         }
     }
   }
