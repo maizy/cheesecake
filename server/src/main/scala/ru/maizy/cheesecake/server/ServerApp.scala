@@ -122,7 +122,7 @@ object ServerApp extends App with SignalHandler {
         }
       }
     } else {
-      appLogger.info("Application ever terminated, skip signal")
+      appLogger.warn("Application ever terminated, skip signal")
     }
   }
 }
