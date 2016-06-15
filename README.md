@@ -5,28 +5,44 @@
 
 _TBA_
 
-## Run tests
+## Compile standalone jar
 
-`sbt test`
+```
+sbt assembly
+ls server/target/scala-2.11/cheesecake-server-assembly-*.jar
+```
+
+## Run in production
+
+```
+java -jar cheesecake-server-assembly-*.jar --help
+
+java -jar cheesecake-server-assembly-*.jar \
+    --config=path/to/config.conf \
+    --host=0.0.0.0 \
+    --port=8080
+```
+
+### Requirements
+
+* jre 1.8+
 
 
-## Start the server in dev mode
+## Dev mode
 
-Dev requirements: node 4.1+, npm 2.5+.
+Dev requirements: scala 2.11.8, jdk 1.8, node 4.1+, npm 2.5+.
 
-Run server in dev mode
-`sbt -DassetsMode=dev -Dlogback.configurationFile=server/src/main/etc/logback.dev.xml server/run`
+[Start stub server](server/etc/stub-server/README.md)
+
+Run server in dev mode with sample configs
+```
+sbt -DassetsMode=dev \
+    -Dlogback.configurationFile=server/src/main/etc/logback.dev.xml \
+    'server/run --config=server/docs/sample-config.conf'
+```
 
 Compile assets:
 `sbt server/compile:assets`
 
 or start in the watch mode (after any changes happens assets will be automatically recompiled):
 `sbt ~server/compile:assets`
-
-
-## Compile all artifacts
-
-```
-sbt assembly
-ls */target/scala-2.11/cheesecake*assembly*.jar
-```
