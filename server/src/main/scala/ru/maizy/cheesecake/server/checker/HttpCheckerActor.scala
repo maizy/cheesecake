@@ -50,7 +50,7 @@ class HttpCheckerActor(val materializer: ActorMaterializer) extends Actor with A
   }
 
   def check(endpoint: HttpEndpoint, sender: ActorRef, includeResponse: Boolean = false): Unit = {
-    log.info(s"check http endpoint: $endpoint" + (if (includeResponse) " with response" else ""))
+    log.debug(s"check http endpoint: $endpoint" + (if (includeResponse) " with response" else ""))
     val headers: Seq[HttpHeader] = for (
       headersMap <- endpoint.headers.toSeq;
       (key, values) <- headersMap;
