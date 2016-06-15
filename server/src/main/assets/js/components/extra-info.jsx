@@ -7,7 +7,7 @@ define(
 [
     "react",
     "immutable",
-    "components/value-pair",
+    "components/value-pair"
 ],
 function(
     React,
@@ -17,15 +17,16 @@ function(
     return React.createClass({
         render: function () {
 
-            let valuesProp = Immutable.OrderedMap([
-                ["version", "1.2.3"],
-                ["other", "very long value"]
-            ]);
-
-            let values = valuesProp.map((name, value) => <ValuePair name={name} value={value}/>);
-            return <ul>
-                {values}
-            </ul>
+            const values = this.props.values != null
+                ? this.props.values.map((value, name) => <ValuePair name={name} value={value}/>)
+                : null;
+            return values != null
+                ? (
+                    <ul>
+                        {values}
+                    </ul>
+                )
+                : null
         }
     });
 });

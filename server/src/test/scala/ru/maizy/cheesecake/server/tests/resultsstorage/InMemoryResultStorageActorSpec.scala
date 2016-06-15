@@ -47,13 +47,15 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
     val uptimeChecks = SimpleAggregate(AggregateType.UptimeChecks)
     val uptimeDuration = SimpleAggregate(AggregateType.UptimeDuration)
     val currentStatus = SimpleAggregate(AggregateType.CurrentStatus)
+    val currentExtraInfo = SimpleAggregate(AggregateType.CurrentExtraInfo)
     val allAggregates = Seq(
       lastUnavailable,
       lastOk,
       lastUnableToCheck,
       uptimeChecks,
       uptimeDuration,
-      currentStatus
+      currentStatus,
+      currentExtraInfo
     )
 
     def checkResult(shift: Int, status: CheckStatus.Type): HttpCheckResult =
@@ -178,8 +180,7 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
     }
   }
 
-  // FIXME: some time gotchas in duration asserts, successChecks may have future time
-  ignore should "returns uptime checks & duration" in {
+  it should "returns uptime checks & duration" in {
     val timeout = 3.seconds   // may be increased for a debugger session
     val timeShift = Stream.iterate(0)(_ + 1).iterator
 
@@ -238,7 +239,7 @@ class InMemoryResultStorageActorSpec extends ActorSystemBaseSpec with FlatSpecLi
       ref ! GetAggregatedResults(Seq(endpointFqn), Seq(currentStatus))
       expectMsg(timeout, AggregatedResults(Map(
         endpointFqn -> Map(
-          currentStatus -> OptionalStatusResult(Some(CheckStatus.Ok))
+          currentStatus -> OptionalStatusResult(Some(CheckStatus.UnableToCheck))
         )
       )))
     }

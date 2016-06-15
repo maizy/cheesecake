@@ -29,7 +29,7 @@ function(
         hasData: "hasData"
     };
 
-    const COLUMNS = 3;
+    const COLUMNS = 4;
 
     const StatusCell = React.createClass({
         render: function () {
@@ -44,20 +44,24 @@ function(
 
     const EndpointRow = React.createClass({
         render: function () {
+            const service = this.props.service;
+            const endpoint = this.props.endpoint;
+            const aggregates = this.props.aggregates;
             const serviceNameCell = this.props.isFirst ?
                 (
                     <td className="service"
                         rowSpan={this.props.thisServiceEndpointsAmount}>
-                        {this.props.service.get("name")}
+                        {service.get("name")}
                     </td>
                 )
                 : null;
+            const extraInfo = aggregates.get("current-extra-info").get("value");
             return (
                 <tr>
                     {serviceNameCell}
-                    <td className="endpoint"><Endpoint.EndpointName endpoint={this.props.endpoint}/></td>
-                    <StatusCell aggregates={this.props.aggregates}/>
-                    {/* <td className="extra"><ExtraInfo /></td> */}
+                    <td className="endpoint"><Endpoint.EndpointName endpoint={endpoint}/></td>
+                    <StatusCell aggregates={aggregates}/>
+                    <td className="extra"><ExtraInfo values={extraInfo}/></td>
                 </tr>
             );
         }
@@ -151,7 +155,7 @@ function(
                         <th className="service">Service</th>
                         <th className="endpoint">Endpoint</th>
                         <th className="status">Status</th>
-                        {/* <th className="extra">Extra</th> */}
+                        <th className="extra">Extra</th>
                     </tr>
                     </thead>
                     {content}

@@ -7,6 +7,7 @@ package ru.maizy.cheesecake.server.service
 
 import java.net.InetAddress
 import ru.maizy.cheesecake.server.Headers
+import ru.maizy.cheesecake.server.bodyparser.BodyParserSpec
 
 sealed trait HttpAddress {
   def hostName: String
@@ -22,5 +23,6 @@ case class HttpEndpoint(
     address: HttpAddress,
     port: Int,
     path: String = "/",
-    headers: Option[Headers] = None
+    headers: Option[Headers] = None,
+    bodyParsers: Option[Map[String, BodyParserSpec]] = None
 ) extends Endpoint

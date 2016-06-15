@@ -2,7 +2,7 @@ package ru.maizy.cheesecake.server.checker
 
 import java.time.ZonedDateTime
 import akka.util.ByteString
-import ru.maizy.cheesecake.server.Headers
+import ru.maizy.cheesecake.server.{ Headers, ExtraInfo }
 import ru.maizy.cheesecake.server.service.HttpEndpoint
 
 /**
@@ -20,7 +20,8 @@ case class HttpCheckResult(
     checkTime: ZonedDateTime,
     httpStatus: Option[Int] = None,
     body: Option[ByteString] = None,
-    headers: Option[Headers] = None
+    headers: Option[Headers] = None,
+    extraInfo: Option[ExtraInfo] = None
 ) extends CheckResult {
 
   def describe: String =

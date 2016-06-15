@@ -13,7 +13,8 @@ function(
     return React.createClass({
         render: function () {
             return (
-                <li>{this.props.name}:{' '}
+                <li>
+                    {`${this.props.name}: `}
                     <span className="value">{this.props.value}</span>
                 </li>
             );

@@ -8,11 +8,10 @@ package ru.maizy.cheesecake.core
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConverters.asScalaSetConverter
 import scala.util.{ Failure, Success, Try }
-import com.typesafe.config.{ Config, ConfigException, ConfigObject }
+import com.typesafe.config.{ Config, ConfigException, ConfigObject, ConfigValue, ConfigValueType }
 
 object RichTypesafeConfig {
 
-  type WarnMessages = Seq[String]
   case class ConfigLookupResults[T](result: T, warnings: WarnMessages)
 
   sealed trait ConfigError {
@@ -88,24 +87,39 @@ object RichTypesafeConfig {
 
     def optObject(path: String): Option[ConfigObject] = eitherObject(path).right.toOption
 
-    def eitherStringMapWithWarnings(path: String): ConfigLookupResults[Either[ConfigError, Map[String, String]]] = {
+    private def eitherSomeTypeMapWithWarnings[T](
+        path: String,
+        typeName: String,
+        predicate: ConfigValue => Boolean,
+        cast: ConfigValue => T)
+        : ConfigLookupResults[Either[ConfigError, Map[String, T]]] = {
+
+
       eitherObject(path) match {
         case Right(obj) =>
           val entiries = obj.entrySet.asScala.toIndexedSeq
           ConfigLookupResults(
             Right(
               entiries
-                .filter(_.getValue.unwrapped.isInstanceOf[String])
-                .map(e => (e.getKey, e.getValue.unwrapped.asInstanceOf[String]))
+                .filter(entry => predicate(entry.getValue))
+                .map(e => (e.getKey, cast(e.getValue)))
                 .toMap
             ),
             entiries
-              .filterNot(_.getValue.unwrapped.isInstanceOf[String])
-              .map(wrongValue => s"Value for `${wrongValue.getKey}` isn't string")
+              .filterNot(entry => predicate(entry.getValue))
+              .map(wrongValue => s"Value for `${wrongValue.getKey}` isn't $typeName")
           )
         case Left(error) => ConfigLookupResults(Left(error), Seq.empty)
       }
     }
+
+    def eitherStringMapWithWarnings(path: String): ConfigLookupResults[Either[ConfigError, Map[String, String]]] =
+      eitherSomeTypeMapWithWarnings(
+        path,
+        typeName = "string",
+        predicate = _.valueType() == ConfigValueType.STRING,
+        cast = _.unwrapped.asInstanceOf[String]
+      )
 
     def eitherStringMap(path: String): Either[ConfigError, Map[String, String]] =
       eitherStringMapWithWarnings(path).result
@@ -116,6 +130,26 @@ object RichTypesafeConfig {
     }
 
     def optStringMap(path: String): Option[Map[String, String]] = optStringMapWithWarnings(path).result
+
+    def eitherConfigObjectMapWithWarnings(
+        path: String): ConfigLookupResults[Either[ConfigError, Map[String, ConfigObject]]] =
+      eitherSomeTypeMapWithWarnings(
+        path,
+        typeName = "object",
+        predicate = _.valueType() == ConfigValueType.OBJECT,
+        cast = _.asInstanceOf[ConfigObject]
+      )
+
+    def eitherConfigObjectMap(path: String): Either[ConfigError, Map[String, ConfigObject]] =
+      eitherConfigObjectMapWithWarnings(path).result
+
+    def optConfigObjectMapWithWarnings(path: String): ConfigLookupResults[Option[Map[String, ConfigObject]]] = {
+      val eitherMapResults = eitherConfigObjectMapWithWarnings(path)
+      ConfigLookupResults(eitherMapResults.result.right.toOption, eitherMapResults.warnings)
+    }
+
+    def optConfigObjectMap(path: String): Option[Map[String, ConfigObject]] =
+      optConfigObjectMapWithWarnings(path).result
   }
 
 

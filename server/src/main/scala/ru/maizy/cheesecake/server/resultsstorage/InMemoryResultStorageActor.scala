@@ -165,8 +165,15 @@ class InMemoryResultStorageActor extends ResultStorageActor with ActorLogging {
       case SimpleAggregate(AggregateType.CurrentStatus) =>
         Right(OptionalStatusResult(
           cell
-            .flatMap(_.checks.headOption)
+            .flatMap(_.checks.lastOption)
             .map(_.status)
+        ))
+
+      case SimpleAggregate(AggregateType.CurrentExtraInfo) =>
+        Right(OptionalExtraInfoResult(
+          cell
+            .flatMap(_.checks.lastOption)
+            .flatMap(_.extraInfo)
         ))
 
       case other: Aggregate => Left(s"Unknown aggregate: $other")

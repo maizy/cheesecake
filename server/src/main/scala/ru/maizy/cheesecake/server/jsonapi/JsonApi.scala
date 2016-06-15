@@ -83,6 +83,7 @@ class JsonApi(system: ActorSystem, host: String, port: Int) extends JsonApiMarsh
           SimpleAggregate(AggregateType.UptimeDuration),
           SimpleAggregate(AggregateType.UptimeChecks),
           SimpleAggregate(AggregateType.CurrentStatus),
+          SimpleAggregate(AggregateType.CurrentExtraInfo),
           LastResultAggregate(CheckStatus.Ok),
           LastResultAggregate(CheckStatus.Unavailable),
           LastResultAggregate(CheckStatus.UnableToCheck)

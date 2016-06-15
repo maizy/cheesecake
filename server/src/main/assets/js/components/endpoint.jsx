@@ -14,13 +14,13 @@ function(
         render: function () {
             const endpoint = this.props.endpoint;
             const type = endpoint.get("type");
+            const port = endpoint.get("port");
             switch (type) {
                 case "http":
                     return (<span>
                         http://
                         {endpoint.get("address").get("hostname")}
-                        :
-                        {endpoint.get("port")}
+                        {port == "80" ? null : `:${port}`}
                         {endpoint.get("path")}
                     </span>
                     );
