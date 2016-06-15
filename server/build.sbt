@@ -2,7 +2,7 @@ enablePlugins(JavaServerAppPackaging, SbtWeb)
 
 name := "cheesecake-server"
 
-val akkaVersion = "2.4.4"
+val akkaVersion = "2.4.7"
 val akkaStreamsVersion = akkaVersion
 
 val immutableJsVersion = "3.8.1"
