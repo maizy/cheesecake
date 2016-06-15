@@ -5,6 +5,7 @@ package ru.maizy.cheesecake.server
  * See LICENSE.txt for details.
  */
 
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.{ Failure, Success, Try }
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
@@ -14,13 +15,25 @@ import com.typesafe.config.{ Config, ConfigFactory }
 import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
 import ru.maizy.cheesecake.server.jsonapi.JsonApi
+import sun.misc.{ Signal, SignalHandler }
 
-object ServerApp extends App {
+object ServerApp extends App with SignalHandler {
   val STATUS_BAD_OPTIONS = 2
   val STATUS_BAD_CONFIG = 3
   val STATUS_UNABLE_TO_BIND = 10
 
+  val SIGING = "INT"
+  val SIGTERM = "TERM"
+
+  var actorSystem: Option[ActorSystem] = None
+
+  val terminated = new AtomicBoolean(false)
   val appLogger = Logger(LoggerFactory.getLogger(s"${BuildInfo.organization}.${BuildInfo.projectName}"))
+
+  appLogger.info("Subscribe to SIGING, SIGTERM signals")
+  Signal.handle(new Signal(SIGING), this)
+  Signal.handle(new Signal(SIGTERM), this)
+
 
   OptionParser.parse(args) match {
     case None =>
@@ -53,7 +66,6 @@ object ServerApp extends App {
     }
   }
 
-  // TODO: app life management
   def startUp(opts: ServerAppOptions): Unit = {
     appLogger.info("Loading configs")
     loadConfig(opts) match {
@@ -64,6 +76,7 @@ object ServerApp extends App {
 
       case Success(config) =>
         implicit val system = ActorSystem("cheesecake-server", config)
+        actorSystem = Some(system)
         implicit val materializer = ActorMaterializer()
         implicit val ec = system.dispatcher
 
@@ -96,6 +109,20 @@ object ServerApp extends App {
           appLogger.info("Initializing checking services & endpoints")
           initializer.fromConfig(config)
         }
+    }
+  }
+
+  override def handle(signal: Signal): Unit = {
+    appLogger.info(s"Receive signal ${signal.getName}")
+    if (terminated.compareAndSet(false, true)) {
+      actorSystem foreach { system =>
+        if (Seq(SIGING, SIGTERM).contains(signal.getName)) {
+          appLogger.debug(s"Handle signal")
+          system.terminate()
+        }
+      }
+    } else {
+      appLogger.info("Application ever terminated, skip signal")
     }
   }
 }
