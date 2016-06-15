@@ -26,7 +26,7 @@ trait BodyParseSpecMarshallers extends JsonMarshaller {
 
         case s: XmlParserSpec =>
           JsObject(
-            "xpath" -> JsString(s.xpath)
+            "xpath" -> JsString(s.symbolic)
           )
 
         case s: RegexpParserSpec =>
