@@ -4,6 +4,8 @@ lazy val commonSettings = Seq(
   organization := "ru.maizy",
   version := "0.0.3",
   scalaVersion := "2.11.8",
+  maintainer := "Nikita Kovaliov <nikita@maizy.ru>",
+  packageSummary := "service monitoring tool",
   scalacOptions ++= Seq(
     "-target:jvm-1.8",
     "-encoding", "UTF-8",

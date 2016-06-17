@@ -1,4 +1,6 @@
-enablePlugins(JavaServerAppPackaging, SbtWeb)
+import com.typesafe.sbt.packager.docker._
+enablePlugins(JavaServerAppPackaging, SbtWeb, DockerPlugin)
+
 
 name := "cheesecake-server"
 
@@ -52,6 +54,36 @@ resourceGenerators in Compile += Def.task {
   IO.write(file, contents)
   Seq(file)
 }.taskValue
+
+// Docker settings
+val dockerRoot = "/opt/docker"
+val dockerConfigs = "/configs"
+val dockerUser = "daemon"
+val dockerOwnership = s"$dockerUser:$dockerUser"
+
+mappings in (Compile, packageDoc) := Seq()
+version in Docker := s"${version.value}-b1"
+
+dockerCommands := Seq(
+  Cmd("FROM", "relateiq/oracle-java8"),
+  Cmd("MAINTAINER", maintainer.value),
+
+  ExecCmd("RUN", "mkdir", "-p", dockerRoot),
+  ExecCmd("RUN", "chown", "-R", dockerOwnership, dockerRoot),
+
+  ExecCmd("RUN", "mkdir", "-p", dockerConfigs),
+  ExecCmd("RUN", "chown", "-R", dockerOwnership, dockerConfigs),
+
+  Cmd("USER", dockerUser),
+  Cmd("ADD", "opt", "/opt"),
+
+  Cmd("EXPOSE", "52022"),
+  Cmd("WORKDIR", dockerRoot),
+  Cmd("VOLUME", dockerConfigs),
+
+  ExecCmd("ENTRYPOINT", s"bin/${name.value}"),
+  ExecCmd("CMD", "--host=0.0.0.0", s"--config=${dockerConfigs}/cheesecake.conf")
+)
 
 // Frontend settings
 JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
