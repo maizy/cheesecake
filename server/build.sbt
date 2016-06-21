@@ -62,7 +62,8 @@ val dockerUser = "daemon"
 val dockerOwnership = s"$dockerUser:$dockerUser"
 
 mappings in (Compile, packageDoc) := Seq()
-version in Docker := s"${version.value}-b1"
+version in Docker := version.value
+dockerRepository := Some("maizy")
 
 dockerCommands := Seq(
   Cmd("FROM", "relateiq/oracle-java8"),
@@ -82,7 +83,7 @@ dockerCommands := Seq(
   Cmd("VOLUME", dockerConfigs),
 
   ExecCmd("ENTRYPOINT", s"bin/${name.value}"),
-  ExecCmd("CMD", "--host=0.0.0.0", s"--config=${dockerConfigs}/cheesecake.conf")
+  ExecCmd("CMD", "--host=0.0.0.0", s"--config=$dockerConfigs/cheesecake.conf")
 )
 
 // Frontend settings
