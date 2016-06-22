@@ -65,3 +65,18 @@ or start in the watch mode (after any changes happens assets will be automatical
 sbt assembly
 ls server/target/scala-2.11/cheesecake-server-assembly-*.jar
 ```
+
+
+## Create docker image
+
+Create local container:
+
+`sbt server/docker:publishLocal`
+
+Publish to docker hub:
+
+```
+sbt server/docker:publish
+docker tag maizy/cheesecake-server:x.x.x maizy/cheesecake-server:latest
+docker push maizy/cheesecake-server:latest
+```
