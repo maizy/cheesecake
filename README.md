@@ -11,7 +11,7 @@ Service monitoring tool.
 [Download cheesecake-server-assembly.jar](#TODO)
 
 Create `cheesecake.conf`. See an example config & format description into
-[`server/docs/sample-config.conf`](server/docs/sample-config.conf)
+[`server/docs/sample-config/cheesecake.conf`](server/docs/sample-config/cheesecake.conf)
 
 ```
 java -jar cheesecake-server-assembly.jar --help
@@ -30,7 +30,7 @@ Requirements: jre 1.8+
 Create config dir, put `cheesecake.conf` into it.
 
 See an example config & format description into
-[`server/docs/sample-config.conf`](server/docs/sample-config.conf)
+[`server/docs/sample-config/cheesecake.conf`](server/docs/sample-config/cheesecake.conf)
 
 ```
 docker run \
@@ -50,7 +50,7 @@ Run server in dev mode with sample configs
 ```
 sbt -DassetsMode=dev \
     -Dlogback.configurationFile=server/src/main/etc/logback.dev.xml \
-    'server/run --config=server/docs/sample-config.conf'
+    'server/run --config=server/docs/sample-config/cheesecake.conf'
 ```
 
 Compile assets:

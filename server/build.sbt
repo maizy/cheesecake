@@ -66,7 +66,7 @@ version in Docker := version.value
 dockerRepository := Some("maizy")
 
 dockerCommands := Seq(
-  Cmd("FROM", "relateiq/oracle-java8"),
+  Cmd("FROM", "anapsix/alpine-java:jre8"),
   Cmd("MAINTAINER", maintainer.value),
 
   ExecCmd("RUN", "mkdir", "-p", dockerRoot),
